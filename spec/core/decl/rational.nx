@@ -1,0 +1,48 @@
+require "./fractional.nx"
+
+# A rational number.
+decl primitive Rational<Type: T ~ Integer>
+  derive Fractional;
+
+  # An arithmetic overflow.
+  struct Overflow;
+end
+
+alias Rat<Bitsize: B>, SRat<Bitsize: B> = Rational<SInt<B>>
+alias URat<Bitsize: B> = Rational<UInt<B>>
+
+alias Rat8, SRat8 = SRat<8>
+alias Rat16, SRat16 = SRat<16>
+alias Rat32, SRat32 = SRat<32>
+alias Rat64, SRat64 = SRat<64>
+
+alias URat8 = URat<8>
+alias URat16 = URat<16>
+alias URat32 = URat<32>
+alias URat64 = URat<64>
+
+alias Rat, SRat = Rational<SInt>
+alias URat = Rational<UInt>
+
+alias ShortRat, SShortRat = Rational<SShort>
+alias IntRat, SIntRat = Rational<SInt>
+alias LongRat, SLongRat = Rational<SLong>
+alias LongLongRat, SLongLongRat = Rational<SLongLong>
+
+alias UShortRat = Rational<UShort>
+alias UIntRat = Rational<UInt>
+alias ULongRat = Rational<ULong>
+alias ULongLongRat = Rational<ULongLong>
+
+alias FastRat<Bitsize: B>, SFastRat<Bitsize: B> = Rational<SFast<B>>
+alias UFastRat<Bitsize: B> = Rational<UFast<B>>
+
+alias FastRat8, SFastRat8 = FastRat<8>
+alias FastRat16, SFastRat16 = FastRat<16>
+alias FastRat32, SFastRat32 = FastRat<32>
+alias FastRat64, SFastRat64 = FastRat<64>
+
+alias UFastRat8 = UFastRat<8>
+alias UFastRat16 = UFastRat<16>
+alias UFastRat32 = UFastRat<32>
+alias UFastRat64 = UFastRat<64>

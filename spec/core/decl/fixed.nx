@@ -1,0 +1,17 @@
+require "./fractional.nx"
+
+# A fixed-point number.
+decl primitive Fixed<
+  Base: 2 || 10,
+
+  # Size of the integral part in `Base`.
+  Integral: ~%Natural = 0,
+
+  # Size of the fractional part in `Base`.
+  # May be negative for right-shift.
+  Fractional: ~%Integer = 0
+>
+end
+
+alias XBin<*> = Fixed<2, *>
+alias XDec<*> = Fixed<10, *>

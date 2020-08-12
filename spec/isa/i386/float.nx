@@ -1,0 +1,30 @@
+# TODO: If using x87 for single-(or double-)precision arithmetic,
+# a sequence of operations produce different results rather than
+# if using strict single (or double) arithmetic; should `X87FSingle`
+# directly map to `FBin32` along with simple `X86::FSingle`?
+#
+
+# Two variants to work with singles.
+#
+# A) Choose best. SSE is better. Still provide access for x87
+
+namespace I386
+  {% if nx.target.ise:includes("sse") then %}
+    # `FBin32` is implemented natively as SSE float
+    alias SSE::FSingle = ::FBin32
+  {% else %}
+    # `FBin32` is implemented natively as X87 float
+    alias X87::FSingle = ::FBin32
+  {% end %}
+
+  {% if nx.target.ise:includes("sse2") then %}
+    # `FBin64` is implemented natively as SSE2 double
+    alias SSE2::FDouble = ::FBin64
+  {% else %}
+    # `FBin64` is implemented natively as x87 double
+    alias X87::FDouble = ::FBin64
+  {% end %}
+
+  # `FBin64E` is implemented natively as x87 extended precision
+  alias X87::FQuad = ::FBin64E = ::Float<2, 64, 16383> # `$`long double``
+end

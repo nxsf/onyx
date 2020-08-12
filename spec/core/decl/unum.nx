@@ -1,0 +1,80 @@
+require "./fractional.nx"
+
+# (Type III universal numbers)[1], also known as posits with quires.
+#
+# Currently, posits are rarely implemented in hardware, therefore
+# they shall be used in cases when increased precision is preferable
+# over performance loss.
+#
+# [1]: https://en.wikipedia.org/wiki/Universal_numbers_(data_format).
+#
+
+# Type III unums part, a posit.
+# Used for floating-point numbers representation.
+decl primitive Posit<Bitsize: Z ~ %Size, Exponent: E ~ %Size>
+  derive Fractional;
+
+  decl initialize(value : self)
+  decl initialize(literal ~ %!Rational)
+
+  # For floating-point numbers, precision loss is considered a norm.
+  # Therefore, there is no need in distinct `to_*!` methods family.
+  decl to([0]: \T): T forall T ~ Real
+end
+
+# The recommended posit sizes and corresponding
+# exponent bits and quire sizes:
+#
+# Posit size (bits) | Number of exponent bits	 | Quire size (bits)
+# ---               | ---                      | ---
+# 8                 | 0                        | 32
+# 16                | 1                        | 128
+# 32                | 2                        | 512
+# 64                | 3                        | 2048
+#
+# NOTE: 32-bit posit is expected to be sufficient to solve
+# almost all classes of applications[citation needed].
+
+alias Posit8<Exponent = 0> = Posit<8, Exponent>
+alias Posit16<Exponent = 1> = Posit<16, Exponent>
+alias Posit32<Exponent = 2> = Posit<32, Exponent>
+alias Posit64<Exponent = 3> = Posit<64, Exponent>
+
+# Type III unums part, a quire.
+# Used for floating-point numbers computation.
+#
+# ```
+# let q = Quire<128>()
+# assert(q.add(10p, 20p).to_p == 30)
+# ```
+decl primitive Quire<Bitsize: B ~ %Size>
+  # Fused-multiply–add, i.e. `a * b + c`.
+  #
+  # ```
+  # let q = Quire<128>()
+  # assert(q.fmadd(10p, 2p, 5p).to_p == 25)
+  # ```
+  decl fmadd(multiplied: P1, factor: P2, added: P3): self
+  forall P1 ~ Posit, P2 ~ Posit, P3 ~ Posit
+
+  # Fused-dot-product add *a* to *b*.
+  #
+  # ```
+  # let q = Quire<128>()
+  # assert(q.add(10p, 20p).to_p == 30)
+  # ```
+  decl add([0]: P1, [0]: P2): self
+  forall P1 ~ Posit, P2 ~ Posit
+
+  # Fused-dot-product subtract *b* from *a*.
+  #
+  # ```
+  # let q = Quire<128>()
+  # assert(q.sub(30p, 20p).to_p == 10)
+  # ```
+  decl subtract(minued: P1, subtrahend: P2): self
+  forall P1 ~ Posit, P2 ~ Posit
+  alias sub = subtract
+
+  decl to([0]: \T): T forall T ~ Real
+end

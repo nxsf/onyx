@@ -1,0 +1,420 @@
+= Traits
+:icons: font
+
+A trait is a composable unit of behaviour.
+
+TIP: The traits implementation is inspired by https://en.wikipedia.org/wiki/Trait_(computer_programming)#cite_note-2[_Traits: A mechanism for fine-grained reuse_] by Ducasse et al., 2006.
+
+TODO: Only units and objects may derive from a trait.
+Namespaces do not have behaviour.
+
+== Declaring a trait
+
+.Trait declaration syntax
+[syntax]
+----
+trait_decl =
+  trait_decl_mod,
+  ["decl"],
+  "trait",
+  id,
+  [nb, generic_arguments_decl],
+  ";" | body();
+
+trait_decl_mod = [type_visibility_mod];
+----
+
+A trait type can not be implemented; instead, it is continuously declared.
+A `trait T` statement is a shortcut to `decl trait T`.
+A trait declaration statement may include a type visibility modifier and a generic arguments declaration.
+
+// A trait type can be reopened; standard reopening rules apply.
+
+A trait type is always an incomplete type.
+A trait type declaration statement can not contain a completeness modifier.
+
+A trait type function and value members have storage.
+The storage is implicitly instance.
+
+A trait type allows method declaration and implementation.
+A trait method implementation is specialized for every deriving type separately.
+A trait method implementation may use `this` and `super` keywords, which evaluate in accordance to the context the method is specialzied within.
+
+// TODO: Declaring with incomplete return types is allowed. This way, calling a trait impl would return `~ Undef`.
+
+== Trait arithmetic
+
+// TODO: Footnote a license text from Wikipedia (https://en.wikipedia.org/wiki/Trait_(computer_programming)).
+
+An object or trait type conveys a set of traits it derives from, which is empty by default for object types and contains itself for trait types.
+
+Deriving from a trait adds the trait term to the deriving type traits set.
+
+Trait set composition is commutative: the ordering of adding traits to the set does not matter.
+
+Nested traits are equivalent to flattened traits; the trait set composition hierarchy does not affect the traits behaviour.
+
+The same trait may be derived multiple times by the same object; it would still count as a single traits set entry.
+
+Recursive derivations are allowed.
+
+== Deriving from a trait
+
+A type which has a `derive T` clause is said to _derive from_ `_T_`.
+
+.The `derive` clause syntax
+[syntax]
+----
+derive =
+  ["undefstor" | "static" | "instance"],
+  "derive",
+  id,
+  ";" | block();
+----
+
+Deriver, deriving (type), derivative:: The type deriving from a trait.
+
+Derivee, derived (type):: The trait a type derives from.
+
+// Any type other than itself can derive from a trait.
+// Recursive derivations are not allowed.
+
+A deriving type may contain multiple `derive` statements.
+
+// Multiple derives from the same type are not allowed.
+
+Deriving from a trait includes all of its members with undefined storage into the deriving type as if they were defined within the deriving type itself, which may lead to name collisions.
+The storage of an included member depends on the storage modifier of the according `derive` clause.
+
+.`derive` clause storage modifiers
+|===
+| Deriving type | Allowed modifiers | Default modifier
+
+| Namespace
+| `static`
+| `static`
+
+| Trait
+| `static`, `undefstor`
+| `undefstor`
+
+| Primitive, class, enum
+| `static`, `instance`
+| `instance`
+|===
+
+Therefore, `static derive T` from type `U` is identical to reopening a `Type<U>` type and then instance-deriving it from `T`.
+
+.Multiple ways to statically derive
+====
+.Static derive in T
+```nx
+reopen SInt32
+  static derive Debuggable
+    impl debug(stream) { stream << "SInt32" }
+  end
+end
+```
+
+.Instance derive in Type<T>
+```nx
+reopen Type<SInt32>
+  derive Debuggable
+    impl debug(stream) { stream << "SInt32" }
+  end
+end
+```
+====
+
+// Trait composition is commutative: the ordering of `derive` clauses does not matter.
+
+// TODO: Only conflicts when matches overload, e.g. `foo(x: SInt)` does not conflict with `foo(x : FBin)` with different implementations.
+// Conflicting definitions:: Trait definitions which have overlapping declarations, but different implementations.
+
+// Conflicting definitions must be excluded from the composition.
+
+// It can be achieved by either un-implementing a declaration using an `unimpl` clause.
+// Or by re-implementing a declaration using an `reimpl` clause.
+// Or by moving an implementation under different declaration using a `movedef` clause.
+
+// Nested traits are equivalent to flattened traits; the composition hierarchy does not affect the traits behaviour.
+
+// TODO: `this` is either instance or type, depending on the storage. `self` is always the type. It is applicable to all types, though.
+
+Only statements allowed within a `derive` statement are `impl`, `reimpl`, `alias` and `moveimpl`.
+
+A `derive` statement may be early-terminated with a semicolon, left without any inner statements.
+
+Lookups within a `derive` statement check the trait's scope at first, and then go up to the deriving type.
+
+A derived trait type may be referenced using the `derived` keyword.
+The deriving type may still be referenced using the `self` keyword.
+
+Technically, it is allowed to reference other traits' members within a `derive` statement, e.g. `self~OtherTrait:foo` (see behavioral erasure below) or `~OtherTrait:foo` or even `foo` (unless there is an ambiguity).
+
+A `derive` statement does not require all included members' implementations to be contained within it (the `derive` statement).
+// However, a compiler must panic pointing out that the declaration is not properly implemented upon trying to call an unimplemented function.
+
+As any other, derived implementations are lazily checked upon specialization.
+If a declaration is not implemented at all, the implementation responsibility is passed to the next deriving type, if any.
+
+=== Behavioral erasure
+
+A derived trait's members are always accessible via their original identifiers with behavioral erasure achieved with fuzzy restriction.
+
+.Using fuzzy restriction to access original trait identifiers
+====
+```nx
+# In this example, both `Drawable2D` and `Drawable3D`
+# have `draw` method declaration. A deriving type has
+# to deal with the collision. One way would be to
+# alias (both) methods under different names.
+trait Drawable2D
+  decl draw
+end
+
+trait Drawable3D
+  decl draw
+end
+
+@[Trivial]
+class Point
+  derive Drawable2D
+    impl draw;
+
+    # Must use `self` here, otherwise
+    # would attempt to declare a new
+    # identifier within a `derive` clause,
+    # which is prohibited.
+    alias self:draw2d to draw
+  end
+
+  derive Drawable3D
+    impl draw;
+    alias self:draw3d to draw
+  end
+end
+
+final p = Point()
+
+p.draw2d # OK
+p.draw3d # OK
+
+# p.draw # Panic! Ambiguous choice between
+         # `Point~Drawable2D.draw` and
+         # `Point~Drawable3D.draw`
+
+p~Drawable2D.draw     # OK
+(p ~ Drawable3D).draw # OK
+
+def draw2d(x ~ Drawable2D)
+  x.draw # OK. Thanks to behavior erasure, exactly
+         # `Drawable2D~draw` is always referenced
+end
+
+draw2d(p) # OK
+
+def draw_or(x ~ Drawable2D || Drawable3D)
+  # x.draw # Panic! `x` may be BOTH `Drawable2D` and `Drawable3D`,
+           # hence unable to choose right implementation
+
+  if not x ~? Drawable2D
+    x.draw # OK. The compiler can prove that it can only
+           # be `Drawable3D`. Even if we add `Drawable4D`
+           # with the same `draw` declaration,
+           # the behavior erasure feature would always
+           # reference `~Drawable3D.draw` exactly.
+  end
+end
+
+draw_or(p) # OK
+
+def draw_and(x ~ Drawable2D ^ Drawable3D)
+  x.draw # OK. There will never be an ambiguity
+end
+
+# draw_and(p) # Panic! Point contains BOTH traits, but they're XORed
+```
+====
+
+// TODO: It is. It's the same as `func(x) { this.x = x }`, and `this` may resolve to `self` in static contexts.
+// The "this-member" shortcut (e.g. `func(this.x)`) is not applicable to trait function declarations.
+
+// === `derivedby` statement
+
+// A trait type declaration may contain a `derivedby` statement.
+
+// .The `derivedby` statement syntax
+// [syntax]
+// ----
+// derivedby =
+//   (* !keyword(statement) *)
+//   "derivedby",
+
+//   type_ref,
+//   {forall},
+//   [where];
+// ----
+
+// ```nx
+// trait Container::Mappable<T>
+//   decl map(-> |T : V|) ~ Container<V> forall V
+// end
+// ```
+
+// [info]
+// --
+// A `derivedby` statement may act as a guard protecting from unwanted deriving types, for example:
+
+// ```nx
+// trait T
+//   # For some reason, we don't want this trait
+//   # to be derived by a `List` of `FBin`.
+//   derivedby U
+//     forall U ~ List<V>
+//     forall V ~ !FBin
+// end
+// ```
+// --
+
+// A `derivedby` statement allows to reference a deriving type within the trait's declarations.
+
+// There can be only one `derivedby` statement within a single `trait` declaration.
+// Identifiers declared by a `derivedby` statement are unique per `derivedby` statement.
+
+// .Using of the `derivedby` statement
+// ====
+// ```nx
+// trait Summable
+//   # Both statements are similar, but the former
+//   # allows to reference the deriving type as `T`
+//   derivedby T forall T : Numeric
+//   derivedby Numeric
+
+//   decl add(self) : self
+// end
+
+// trait Std::Container::Mappable<Element: T>
+//   # The statement uses the variable-positioned generic argument
+//   # feature. Note that this effectively prohibits types NOT
+//   # containing their element type somewhere among its generic
+//   # arguments to derive from this trait.
+//   derivedby U<?Pos: T> forall U
+
+//   decl map(block :: => |T : V|) : U<?Pos: V>
+//   decl map!(block :: => |T : T|) : Void
+// end
+
+// trait Std::Container::Mappable<Element: A>
+//   derivedby B # Each `derivedby` statement with its identifiers
+//               # are unique per `trait` declaration
+// end
+// ```
+// ====
+
+== Abstract traits
+
+A trait may be declared as `abstract`.
+An abstract trait shall not be derived by a non-trait type.
+An abstract trait may be extended by a trait type.
+info:[Effectively, an abstract trait is merged into the extending trait instead of being treated as a separate term participating in the traits sum.
+All instance members of an abstract trait are treated as if they were declared in the deriving trait itself.]
+Biasing to an abstract trait does not treat its methods as ever implemented.
+// An abstract bias allows further biasing to traits derived by the type.
+
+.Abstract traits
+====
+```nx
+abstract trait Drawable
+  decl draw()
+
+  def double_draw
+    draw()
+    draw()
+  end
+end
+
+trait Drawable2D < Drawable;
+trait Drawable3D < Drawable;
+
+struct Point
+  derive Drawable2D
+    impl draw() as self~draw2d;
+  end
+
+  derive Drawable3D
+    impl draw() as self~draw3d;
+  end
+end
+
+struct Line
+  derive Drawable2D
+    impl draw()
+  end
+end
+
+def double_draw2d(x ~ Drawable)
+  # x.draw() # Panic! Can not call an abstract trait method declaration
+
+  if x ~? Drawable2D
+    x.double_draw() # Eq. to `x~Drawable2D.double_draw()`
+  else
+    throw "Not a 2D, rejecting"
+  end
+end
+
+double_draw2d(Point()) # Calls `Point~Drawable2D:double_draw`
+double_draw2d(Line())  # Calls `Line:double_draw`
+```
+
+If `Drawable` was not an abstract trait, but rather a simple trait, it would participate in the trait sum, leading to unwanted collisions.
+
+```nx
+trait A
+  decl foo;
+
+  def double_foo
+    foo()
+    foo()
+  end
+end
+
+# Effectively, `B` = 0 + `A`.
+trait B <~ A;
+
+# Effectively, `C` = 0 + `A`.
+trait C <~ A;
+
+struct Foo
+  # `B + C = 0 + A + 0 + A = A`
+  <~ B, C
+
+  # Either one of these would
+  # suffice, but exactly one.
+  impl A~foo;
+  impl B~foo;
+  impl C~foo;
+
+  # An attempt to implement
+  # either again would panic.
+  impl A~foo; # Panic!
+  impl B~foo; # Panic!
+  impl C~foo; # Panic!
+end
+
+struct Bar
+  <~ B
+  impl A~foo;
+end
+
+Foo~A:foo # OK
+Foo~B:foo # Nope.
+
+reopen (A && B)
+  decl foo
+end
+```
+====
+
+TODO: `decl let color : UInt8` vs. `decl color : UInt8` && `decl color=(UInt8) : Void`.
+`line..color=(42).color` is acceptable?

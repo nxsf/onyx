@@ -1,0 +1,1559 @@
+= Literals
+
+A literal is a constant value known at compilation time, as opposed to a non-literal value computed at runtime.
+
+Despite of the knowledge of existence of such a literal value, a compiler may decide to change its form or completely remove from a binary for optimization purposes.
+In other words, for some kinds of literals, there is no guarantee that a literal would be stored anywhere in a resulting binary; but it must be transparent to a user of the program.
+
+A literal is an rvalue.
+
+[[literal-constrainment]]
+== Literal constrainment
+
+Each literal conveys a certain amount of information, which determines its level of constrainment.
+
+A literal constrainment determines the set of restrictions it can match.
+
+A literal constrainment may be altered with literal prefixes and suffixes.
+
+A literal without any prefixes or suffixes is said to be _unconstrained_.
+Some literal kinds have default types defined for their unconstrained literals, e.g. an unconstrained integral literal is `SInt32` by default.
+
+TIP: Even an unconstrained literal still have some constraints.
+For example, a numeric literal can never become a string.
+Or a negative whole number can never become an unsigned integer.
+
+A literal can be instance-restricted (both with concrete and fuzzy restrictions) to a type, e.g. `42 : SInt32`.
+Applying an instance restriction to a literal takes into consideration and contributes into its constrainment level.
+For example, `42f : SInt32` would be invalid, as the literal is already constrained to a binary floating-point value.
+Or, `42 ~ FBin : SInt32` would also fail on the second restriction.
+
+A literal can be type-restricted to either an exact literal value (e.g. `42 :\: @{42}`) or a built-in type having literals (e.g. `42 ~~ @{Size}`).
+Such a restriction, where the right operand is wrapped in `@{}`, is called a _literal restriction_.
+
+TIP: Literal restrictions are ubiquitous in generic type arguments, e.g. `primitive Array<Type: T, Size: S ~ @{Size}>`.
+
+TODO: Refine exact and fuzzy restrictions, standardize scalar and aggregate literals.
+
+Only a type restriction may be a literal restriction.
+Only a literal may be the left operand of a literal restriction.
+A literal restriction returns its left operand, the literal.
+
+An exact literal restriction must match a complete type literal.
+For example, `@{42i}` and `@{FBin}` are invalid restrictions, because neither literal represents a complete type (despite of the fact that `i` defaults to `SInt32`; in a literal restriction it expands to simply `SInt`).
+A valid example would be `@{42i32}`.
+
+A fuzzy literal restriction may match an incomplete literal kind, but it erasures the left operand behavior, which affects the literal constainment.
+
+.Literal constrainment
+====
+```nx
+# `1` is unconstrained. An unconstrained
+# integral literal defaults to `SInt`.
+# However, it may be further restricted to other types.
+1 ~ Integer
+1 ~ FloatingPoint
+1 ~ Integer<Signed: false> : UInt8
+
+# Adding `-` to the literal reduces the
+# set of restrictions it can match
+-1 ~ Integer<Signed: true>
+-1 !~ Integer<Signed: false>
+-1 ~ FloatingPoint
+
+# Adding a fractional part turns
+# a literal into a non-integer
+1.0 ~ FloatingPoint
+1.0 ~ Fixed
+1.0 !~ Integer
+
+1.0f ~ FBin
+1.0f64 : FBin64
+```
+====
+
+// TODO: \(SInt32) and \i. I.e. wrap exact types in parens. Without them, it is deemed to be a suffix.
+
+.TODO:
+```nx
+def foo(x: L) forall L : %i
+  \{{ nx.scope.L.value }} # `foo(42i) -> 42i`
+  \{{ nx.scope.L.number }} # `foo(42i) -> 42`
+end
+
+def foo(x : L) forall L : %q
+  \{{ nx.scope.L.value }} # `foo("x"utf8) -> "x"utf8`
+  \{{ nx.scope.L.string }} # `foo("x"utf8) -> "x"`
+end
+
+%i, %si  # Integer
+%ui      # Unsigned integer (natural)
+%i32, %z # Limit values
+
+%r, %ri32 # Any-end range
+
+# For clarity with `()`, this is disallowed
+# %ri[) # Specific-end range
+
+%q # Any-encoding string, value is
+%qucs # Accept `"foo"utf8` and `"foo"ucs2`, reject `"foo"ascii`
+
+%ucs, %c, %cucs # A char
+
+# Array of literals is prohibited?
+# Because array becomes a runtime value?
+# %c[] # An array of chars
+
+%c(2) # Exactly 2 chars
+%c(2..) # At least 2 chars
+%c(1..3) # 1 to 3 chars
+
+def foo(*x : L) forall L : %c(2)
+foo(('a', 'b'), ('a', 'b'))
+
+def foo(x : L) forall L : %c(2..)
+foo('a', 'b', 'c')
+
+def foo(*x : L) forall L : %c
+foo('a', 'a', 'a') # Useless
+
+def foo(*x : L) forall L in ('a', 'b', 'c')
+foo('a', 'c') # OK
+```
+
+[[literal-restrictions]]
+.Literal restrictions
+====
+```nx
+42 ~ @{42} : @{42f} : FBin64
+42 ~ @{42i} !: @{42f} # Can not further restrict `i` to `f`
+
+struct Foo<T : @{Size}>
+end
+
+Foo<42> # OK
+# Foo<-42> # Panic!
+
+struct Bar<T : (@{"foo"} || @{"bar"}) ~ @{String}>
+end
+
+Bar<"foo"> # OK
+# Bar<"baz"> # Panic!
+```
+====
+
+== Underscores
+
+Underscores can be used in a literal to either visually divide its parts without contributing into its value, or as a part of its value (true for text literals), or both.
+
+.Application of underscores in literals
+====
+```nx
+1_000_i32     # Underscores do not contribute into the value
+"Hello_world" # Underscore is a part of the value
+"a_b"_u16     # Both
+```
+====
+
+[[literal-suffix-prefix-no-underscore]]
+Literal suffixes and prefixes (see xref:literal-multiplier-prefix[], xref:literal-encoding-prefix[]) are treated as a whole and therefore can not contain underscores.
+
+// TODO: `%ki[2.5 10 -1] == [2_500, 10_000, -1_000]`.
+
+A preceding underscore is treated as (a part of) an identifier and therefore prohibited in literals, e.g. `_1` is an identifier, and `_'a'` is a error.
+
+Sequential underscores are allowed, e.g. `1__000`.
+
+[[trailing-underscores-in-literals]]
+Trailing underscores are allowed in numeric and text literals, but only after a prefix.
+
+[TIP]
+--
+Due to the fact that suffixes are read from the end, trailing underscores are required in cases when it is desired to emphasize the absence of a suffix, for example:
+
+.Using trailing underscores to emphasize the absence of suffix in literals
+====
+```nx
+0z : Size     # "z" is "size" suffix
+0z_ : FBin64  # "z" is "Zepto" multiplier prefix
+0z_f : FBin64 # Ditto
+
+# 0fz # Panic! Can not apply "Zepto" prefix to a `Size` literal
+0fz_ : FBin64 # Prefixes: "f" for "Femto", "z" for "Zepto"
+
+# # A compiler sees it as `'a'asci_i`
+# 'a'ascii # Panic! Can not find encoding `ASCI`
+
+'a'ascii_ : CPoint<UCS2>
+'a'asciii : SInt32
+```
+====
+--
+
+== Literal suffixes
+
+A literal suffix is a combination of graphemes adjacent to a literal contributing into the literal's xref:literal-constrainment[constrainment].
+
+Literal suffixes are only applicable to either scalar or magic literals.
+
+TODO: A scalar literal is an nvalue.
+A scalar literal wrapped in parentheses is still a literal instance.
+Therefore, literal suffixes are applicable to scalar literals even wrapped in parentheses, e.g. `(42)i32`, `("foo")utf16be`.
+
+In a non-xref:_magic-literals[magic] literal, literal suffixes follow the literal value, e.g. `1i`.
+In a magic literal, literal suffixes precede the literal value(s), e.g. `%i[1]`
+
+The first literal suffix in a literal, if any, is _major_.
+The following suffixes are _minor_.
+
+In a literal, literal suffixes are parsed from right to left.
+A literal suffix has higher priority than other parts of a literal.
+
+A literal suffix can not contain underscores.
+
+TIP: Underscores may be used to visually separate suffixes from other parts of a literal.
+Moreover, the fact that a trailing underscore is not allowed after a suffix makes it possible to distinguish between suffixes and, say, prefixes, for example `5f == 5.0f64` but `5f_ ~= 0.5e-15f64`.
+
+A literal suffix may be defined for a type using the `LiteralSuffix` annotation.
+A type with a literal suffix defined must be a functor accepting a literal instance.
+Whichever literal kinds are accepted by the functor defines which literal kinds the suffix may be applied to.
+
+A custom literal suffix has higher precedence than a built-in literal suffix.
+For example, `ascii` would be parsed as `ascii` if defined, and not `asci + i`.
+
+.Defaults for unsuffixed literals
+[cols="1, 2*m"]
+|===
+| Examples | Restriction | Default type
+
+| `42`, `-42`, `2.5k`
+| Numeric
+| SInt32
+
+| `0.5`, `-1f_`
+| Fractional
+| FBin64
+
+m| 'f'
+| Char
+| Char<UCS>
+
+m| "foo"
+| String
+| String<UTF8>
+|===
+
+.Built-in literal suffixes
+[cols="4*m"]
+|===
+| Regex | Applicable to | Constraint | Default type
+
+| /s?i(?<Bitsize>\d+)/
+d| `Integer`, `Char`
+| SInt<Bitsize>
+| SInt<Bitsize>
+
+| /s?i/
+d| `Integer`, `Char`
+| SInt
+| SInt32
+
+| /ui?(?<Bitsize>\d+)/
+d| `Integer`, `Char`
+| UInt<Bitsize>
+| UInt<Bitsize>
+
+| /ui?/
+d| `Integer`, `Char`
+| UInt
+| UInt32
+
+| /c/
+| Char
+| Char
+| Char<UCS>
+
+| /s/
+| String
+| String
+| String<UTF8>
+
+| /ucs/
+| Char
+| Char<UCS>
+| Char<UCS>
+
+d| `/utf8/`, `/utf(16\|32)[lb]e/`, `/ucs(2\|4)/`
+| String
+| String<Encoding>
+| String<Encoding>
+
+| /fb?(?<Bitsize>\d+)/
+d| `Numeric`
+| FBin<Bitsize>
+| FBin<Bitsize>
+
+| /fb?/
+d| `Numeric`
+| FBin
+| FBin64
+
+| /f?d(?<Bitsize>\d+)/
+d| `Numeric`
+| FDec<Bitsize>
+| FDec<Bitsize>
+
+| /f?d/
+d| `Numeric`
+| FDec
+| FDec64
+
+| /Q(?<Bitsize>\d+)?(e(?<Exponent>[+-]?\d+))?/
+| XBin<Bitsize, Exponent>
+| \(Real)
+| Either `Bitsize` or `Exponent` is required
+
+| /D(?<Total>\d+)?(f(?<Fractional>\d+))?/
+| XDec<Total, Fractional>
+| \(Real)
+| Either `Total` or `Fractional` is required
+
+| /j/
+| `Imaginary`
+| \(Real)
+| Turns a literal constrainment from `T` into `Imaginary<T>`
+
+| /p(?<Bitsize>\d+)?/
+| Posit<Bitsize>
+| \(Real)
+| `Bitsize` defaults to `32`
+
+| /bf(?<Bitsize>\d+)?/
+| BFloat<Bitsize>
+| \(Real)
+| `Bitsize` defaults to `16`
+|===
+
+.Built-in literal suffixes
+[cols="3*m, 1", options="header"]
+|===
+| Regex
+| Type
+| Accepted literals
+| Notes
+
+4+d| Integer literal suffixes
+
+| /s?i(?<Bitsize>\d+)?/
+| SInt<Bitsize>
+d| `\(Int)`, `\(Char)` (xnum:character-literal-integral-suffix[]), `\(String)` (xnum:string-literal-integral-suffix[])
+| `Bitsize` defaults to `32`. Default constraint for a signed
+
+| /ui?(?<Bitsize>\d+)?
+| UInt<Bitsize>
+d| `\(Int)`, `\(Char)` (xnum:character-literal-integral-suffix[]), `\(String)` (xnum:string-literal-integral-suffix[])
+| `Bitsize` defaults to `32`
+
+| /c/
+| Char<UCS>
+d|`\(Int)`, `\(Char)`
+| Turns a literal constrainment into `Char` with default charset of `UCS`
+
+| /ucs/
+| Char<UCS>
+| \(Char)
+| Constrains a character literal charset to `UCS`
+
+4+d| Real literal suffixes
+
+| /fb?(?<Bitsize>\d+)?/
+| FBin<Bitsize>
+| \(Real)
+| `Bitsize` defaults to `64`
+
+| /f?d(?<Bitsize>\d+)?/
+| FDec<Bitsize>
+| \(Real)
+| `Bitsize` defaults to `64`
+
+| /Q(?<Bitsize>\d+)?(e(?<Exponent>[+-]?\d+))?/
+| XBin<Bitsize, Exponent>
+| \(Real)
+| Either `Bitsize` or `Exponent` is required
+
+| /D(?<Total>\d+)?(f(?<Fractional>\d+))?/
+| XDec<Total, Fractional>
+| \(Real)
+| Either `Total` or `Fractional` is required
+
+| /j/
+| `Imaginary`
+| \(Real)
+| Turns a literal constrainment from `T` into `Imaginary<T>`
+
+| /p(?<Bitsize>\d+)?/
+| Posit<Bitsize>
+| \(Real)
+| `Bitsize` defaults to `32`
+
+| /bf(?<Bitsize>\d+)?/
+| BFloat<Bitsize>
+| \(Real)
+| `Bitsize` defaults to `16`
+
+4+d| String literal suffixes
+
+d| `/utf8/`, `/utf16[bl]e/`, `/utf32[bl]e/`
+d| `String<UTF8>`, `String<UTF16BE>`, `String<UTF16LE>`, `String<UTF32BE>`, `String<UTF32LE>`
+| \(String)
+| Constrains a string literal encoding
+
+d| `/ucs2/`, `/ucs4/`
+d| `String<UCS2>`, `String<UCS4>`
+| \(String)
+| Constrains a string literal encoding
+
+4+d| C integer literal suffixes
+
+| /\$[su]?h/
+d| `$short`, `$`unsigned short``
+| \(Int)
+|
+
+| /\$[su]?i/
+d| `$int`, `$`unsigned int``
+| \(Int)
+|
+
+| /\$[su]?l/
+d| `$long`, `$`unsigned long``
+| \(Int)
+|
+
+| /\$[su]?ll/
+d| `$`long long++`++`, `$`unsigned long long``
+| \(Int)
+|
+
+| /\$[su]?z/
+d| `$size_t`, `$ssize_t`
+| \(Int)
+|
+
+4+d| C real literal suffixes
+
+| /\$f/
+| $float
+| \(Real)
+|
+
+| /\$d/
+| $double
+| \(Real)
+|
+
+| /\$ld/
+| $++`++long double++`++
+| \(Real)
+|
+|===
+
+// TODO: xcite:literal-suffix-prefix-no-underscore[]
+
+.`to_*` and `as_*` lookup algorithm
+If a receiver `R` does not have a `to_*` or `as_*` method defined explicitly, a compiler then looks up for a literal suffix identical to the `*` part.
+If such a suffix exists for a type `T`, and `R` has method `to(++::++ T)` defined, it is called then.
+Otherwise, a compiler panics because of missing method.
+For example, if `FBin64` had `to(++::++ SInt32)` defined, then all `fbin.to(SInt32)`, `fbin.to_si32` and even `fbin.to_i` would be valid.
+Presence of the algoritm effectively allows hyphens and dollar sign in exclusively in function names beginning with `to_` and `as_`, for example `to_Qe-7` and `as_$f`.
+
+== Scalar literals
+
+=== Numeric literals
+
+// TODO: Add diagram here.
+TODO: Literal structure: base prefix, value: (numeric representation (including multipliers)), suffix.
+
+[TIP]
+====
+Literals are designed to not scream until needed: the syntax is almost invariant in regards to casing, and most things are in lower case.
+Exceptions are the Q number that is widely known by its upper-case name, hexadecimals to distinguish them from other parts, and big multiplier prefixes.
+====
+
+.Numeric literals syntax
+[syntax]
+----
+multiplier_prefix_iec =
+  "Yi" | "Zi" | "Ei" | "Pi" |
+  "Ti" | "Gi" | "Mi" | "Ki";
+
+multiplier_prefix_si =
+  "Y" | "Z" | "E" | "P" | "T" | "G" | "M" | "k" | "h" | "da" |
+  "d" | "c" | "m" | "u" | "μ" | "n" | "p" | "f" | "a" | "z" | "y";
+
+sint_suffix = ["s"], "i", {digit}; (* 32 bits by default *)
+uint_suffix = "u", ["i"], {digit}; (* 32 bits by default *)
+size_suffix = ["s" | "u"], "z"; (* Unsigned by default *)
+
+fbin_suffix = "f", ["b"], {digit}; (* 64 bits by default *)
+fdec_suffix = ["f"], "d", {digit}; (* 64 bits by default *)
+
+(*
+  Design rationale: despite of the fact that `p` can only be in
+  lowercase in Onyx, it'd be confusing to see `42P8` and treat it
+  other than a "42 * 2 ** 8". Had to pick another symbol therefore.
+*)
+posit_suffix = "t", {digit};
+posit_suffix = "p", {digit};
+
+(*
+  Design rationale: would not use `B`, because
+  brain float is "smaller" than usual float.
+*)
+bfloat_suffix = "bf", {digit};
+
+literal_suffix =
+  sint_suffix |
+  uint_suffix |
+  size_suffix |
+  fbin_suffix |
+  fdec_suffix |
+  xbin_suffix |
+  xdec_suffix |
+  posit_suffix |
+  bfloat_suffix;
+
+sign = "-" | "+";
+
+non_decimal_value ($prefix, $base) =
+  $prefix, {$base | "_"}, $base,
+  [".", $base, {$base | "_"}],
+  ["p", [sign], {digit}-]
+
+numeric_literal =
+  [sign],
+  (
+    non_decimal_value("0b", binary) |
+    non_decimal_value("0o", octal) |
+    non_decimal_value("0x", hex) |
+    (
+      digit, {
+        (*
+          Multiplier prefixes allow to
+          have multiple radix points.
+        *)
+        ["."], digit,
+
+        (* The prefix families must not be mixed. *)
+        {digit | "_" | multiplier_prefix_iec | multiplier_prefix_si}
+      },
+      ["e", [sign], {digit}-]
+    )
+  ),
+  {"_"},
+  [literal_suffix];
+----
+
+[NOTE]
+--
+Underscores may be used to:
+
+* Split literal numeric representation into chunks (`1_000_000`);
+* Split literal value and suffix parts (`1_f`);
+* Split literal numeric representation and exponent prefix parts (`1_M`);
+* Split literal exponent prefix and suffix parts (`1M_i`);
+* Designate an absence of suffix (`1z_`).
+--
+
+TIP: A recommended chunk size should be preserved when applying underscores (e.g. `10_000_00` is confusing).
+
+Numeric literals always have big-endian representation, i.e. most significant bits of data come first.
+For example, `0x2a == 0x002a == 0b101010 == 0b0010_1010 == 42`.
+
+TODO: Applying an exponent (`e` for decimal, `p` for other bases) makes a literal fractional. However, it still can be forced to be integral, if is allowed to.
+
+NOTE: Regardless of the literal representation endianess, the actual memory layout of a numeric value in runtime may be defined elsewhere.
+// TODO: Put an xref here.
+
+Only the decimal base may be used for floating and fixed decimal literals.
+
+TODO: Which bases and literals allow signs?
+
+// There are binary (`0b`), octal (`0o`), decimal (`0`) and hexadecimal (`0x`) base literals.
+
+// Base prefixes are case-sensitive.
+
+// Not all kinds support all bases, though.
+// Hexadecimal literals are case-insensitive in terms of their values (e.g. `0x2A == 0x2a`).
+
+.Numeric literal bases summary
+[cols="1m,2*,1m",options="header"]
+|===
+| Base prefix
+| Base
+| Recommended chunk size
+| Example
+
+| 0b
+| Binary
+| 4 (https://en.wikipedia.org/wiki/Nibble[nibble])
+| 0b1100_0001
+
+| 0o
+| Octal
+| 3
+| 0o777_001
+
+| 0
+| Decimal
+| 3 (a thousand)
+| 42_000
+
+| 0x
+| Hexadecimal
+| 2
+| 0xab_CD
+|===
+
+In decimal literals, `e` is used to denote a decimal **e**xponent (`* 10 ** e`).
+In literals with other bases, `p` is used to denote a binary exponent, i.e. **p**ower of two (`* 2 ** p`).
+An omitted exponent defaults to 0 (`* 2 ** 0` or `* 10 ** 0`, which is always `* 1`).
+
+TODO: Non-decimal literals can be used for any number.
+Rules are the same:
+```nx
+0x10.1 == 16 + (1 * 16 ** -1) == 16.0625
+0b10000.0001 = 16 + (1 * 2 ** -4) = 16.0625
+0o20.04 = 16 + (4 * 8 ** -2) = 16.0625
+
+0b101010f == 0b101010.0f
+# , thus non-decimal literals are sometimes not exact representations.
+```
+
+An _integral literal_ can be restricted to an integer type.
+
+A _likely-fractional literal_ still can be restricted to an integer type, but defaults to a non-integer type, e.g. `2e2 : SInt32` would be `FBin64` by default.
+A likely-fractional literal can be turned into integral by applying an integral suffix, e.g. `2e2i` would be `SInt32` by default.
+
+A _fractional literal_ can not be restricted to an integer type, e.g. `2e-2 : FBin64`.
+
+A literal with big multiplier prefixes (including multiplier radix points) and/or positive exponents is likely-fractional.
+
+A literal with at least one small multipler prefix, or negative exponent, or fractional radix point; is fractional.
+
+[[literal-multiplier-prefixes]]
+==== Multiplier prefixes
+
+Numeric literals support both binary (https://en.wikipedia.org/wiki/Kibibyte[IEC]) and decimal (https://en.wikipedia.org/wiki/Metric_prefix#List_of_SI_prefixes[SI]) multiplier prefixes.
+
+_big_ multiplier prefix:: One having a positive exponent.
+
+_small_ multiplier prefix:: One having a negative exponent.
+
+.Binary multiplier prefixes (IEC)
+[cols="1m,1,1"]
+|===
+| Prefix | Name | Multiplier
+
+3+^d| Big prefixes
+
+| Yi
+| Yobi
+| 1024⁸
+
+| Zi
+| Zebi
+| 1024⁷
+
+| Ei
+| Exi
+| 1024⁶
+
+| Pi
+| Pebi
+| 1024⁵
+
+| Ti
+| Tebi
+| 1024⁴
+
+| Gi
+| Gibi
+| 1024³
+
+| Mi
+| Mebi
+| 1024²
+
+| Ki
+| Kibi
+| 1024¹
+|===
+
+[[literal-multiplier-prefixes-si]]
+.Decimal multiplier prefixes (SI)
+[cols="1m,1,1"]
+|===
+| Prefix | Name | Multiplier
+
+3+^d| Big prefixes
+
+| Y
+| Yotta
+| 10²⁴
+
+| Z
+| Zetta
+| 10²¹
+
+| E
+| Exa
+| 10¹⁸
+
+| P
+| Peta
+| 10¹⁵
+
+| T
+| Tera
+| 10¹²
+
+| G
+| Giga
+| 10⁹
+
+| M
+| Mega
+| 10⁶
+
+| k
+| Kilo
+| 10³
+
+| h
+| Hecto
+| 10²
+
+| da
+| Deca
+| 10¹
+
+3+^d| Small prefixes
+
+| d
+| Deci
+| 10⁻¹
+
+| c
+| Centi
+| 10⁻²
+
+| m
+| Milli
+| 10⁻³
+
+| u, μ
+| Micro
+| 10⁻⁶
+
+| n
+| Nano
+| 10⁻⁹
+
+| p
+| Pico
+| 10⁻¹²
+
+| f
+| Femto
+| 10⁻¹⁵
+
+| a
+| Atto
+| 10⁻¹⁸
+
+| z
+| Zepto
+| 10⁻²¹
+
+| y
+| Yocto
+| 10⁻²⁴
+|===
+
+Multiplier prefixes are case-sensitive.
+
+Multiplier prefixes can only be used in decimal-based literals.
+
+Multiplier prefixes from different standards must not be mixed, i.e. no binary and decimal prefixes in a single literal.
+
+Multiplier prefixes from the same standard may be mixed in a single literal.
+
+[[multiplier-prefix-order]]
+Multiple multiplier prefixes in a single literal must be in the same order as defined in the tables below.
+For example, `10M300k == 10300000` is valid, but `300k10M` is not, because `M` precedes `k` in xref:literal-multiplier-prefixes-si[].
+
+[TIP]
+====
+Due to the xref:literal-suffix-priority[suffix priority] in literals, it may be desirable to split value and kind with an underscore for readability, e.g. `1Mi_i` and `1M_i`.
+
+.Readability of suffixes in literals
+[example]
+--
+```nx
+0xff64 == 0xf_f64 ~= 15.0
+0xff64f64 == 0xff64_f64 ~= 65380.0
+
+42d == 42_d32   # Simply "FDec"
+42dd == 4.2_d32 # "Deci" + "FDec"
+
+1Mii == 1_048_576‬_i32 # "Mebi" + "SInt"
+1Mi == 1_000_000_i32  # "Mega" + "SInt"
+```
+--
+====
+
+==== Integer literals
+
+An unconstrained integral literal default type is `SInt32`.
+
+==== Floating-point literals
+
+// TODO: Only allow decimal and hexadecimal formats?
+
+An unconstrained likely-fractional and fractional literal default type is `FBin64`.
+
+[[xbin-literals]]
+==== Binary fixed-point literals
+
+// TODO: Only allow binary & decimal formats?
+
+.Q number literal suffix syntax
+[syntax]
+----
+(* For consistency, it is still
+  referenced as "`XBin` suffix". *)
+xbin_suffix =
+  (* An optional signedness. *)
+  ["s" | "u"],
+
+  (* The binary fixed-point (a.k.a.
+    Q number) literal symbol. *)
+  "Q",
+
+  (* An optional bitsize. *)
+  {digit},
+
+  (* An optional Fractional part size in bits. Can also
+    be read as an amount of bits to left-shiFt by. *)
+  ["f", [sign], {digit}-];
+----
+
+xcite::term-q-number[]
+
+A Q number literal is signed by default.
+
+A Q number literal value may be in any base, contain optional multiplier prefixes, optional exponent and optional fractional radix point.
+
+Either bitsize or _f_ractional part size is required in a Q number literal.
+If bitsize is omitted, the nearest greater or equal byte size is inferred, e.g. `0Qe10 == 0Q16e10`, `0Qe-5 == 0Q8e-5`, `0Qe8 == 0Q16e8`.
+If fractional part size is omitted, it equals to the bitsize minus one bit if signed, e.g. `0Q8 == 0Q8e7`, `0uQ8 == 0uQ8e8`.
+
+.Q number literals
+====
+```nx
+1Qf-8 == 2 ** 8 == 256
+
+0.625uQ8 + 0.0078125uQ8 ==
+  0b0.101uQ8 + 0b0.0000001uQ8 =
+  0b0.10100001uQ8 == 0.6328125d
+
+#   1010 0000
+# + 0000 0010
+# = 1010 0010
+
+# In signed Q numbers, the most
+# significant bit is the sign bit,
+# if the implementation is 2's complement.
+#
+# TODO: Come up with a valid example.
+#
+
+-0.625Q8 + 0.0078125Q8 ==
+  -0b0.101Q8e7 + 0b0.0000001Q8e7 =
+  -0b0.10110010Q8 == −0.60546875d
+
+#   1011 0000
+# + 0000 0010
+# = 1011 0010
+```
+====
+
+[[xdec-literals]]
+==== Decimal fixed-point literals
+
+.Decimal fixed-point literal syntax
+[syntax]
+----
+xdec_suffix =
+  (* An optional signedness. *)
+  ["s" | "u"],
+
+  (* The decimal fixed-point literal symbol. *)
+  "D",
+
+  (* An optional total amount of digits. *)
+  {digit},
+
+  (* An optional amount of digits which are fractional. *)
+  ["f", {digit}-];
+----
+
+A decimal fixed-point literal can only be in decimal base.
+
+A decimal fixed-point literal is signed by default.
+
+A decimal fixed-point literal requires either total amount of digits or amount of digits which are fractional, or both, set.
+In case if only the total amount is set, the fractional amount is deemed to be zero.
+In case if only the fractional amount is set, the total amount is deemed to be equal to the fractional.
+
+xcite::dpd-bitsize-omitted[]
+
+=== Text literals
+
+// Text literals are xref:_character_literals[character] and xref:_string_literals[string] literals.
+
+Abstract character::
+A character from the Unicode character set, which may consist of one or many codepoints.
+
+Source-encoded abstract character::
+An abstract character encoded in the source file encoding, for example ⟨a⟩ encoded as `a` (U+0061); ⟨å⟩ encoded as `å` (U+61, U+030A) or `å` (U+00E5).
+
+A text literal is a sequence of abstract characters which are either source-encoded or made up from xref:_numerical_codepoints[].
+
+An abstract character is https://en.wikipedia.org/wiki/Unicode_equivalence#Normalization[normalized] upon parsing.
+Then, the normalized abstract character is encoded into a single codepoint or a sequence of codepoints in the encoding the literal is constrained to, i.e. the target encoding, with preference given to a variant comprised of a lesser amount of codepoints.
+When the target encoding supports multiple codepoint sequences for a single abstract character representation, and a specific sequence variant is desired, xref:_numerical_codepoints[numerical codepoints] shall be used instead of source-encoded abstract characters.
+If the target encoding does not support the abstract character at all, a compiler panics.
+
+// TODO: Backslash can also be used to escape characters, e.g. `\"` in strings.
+The standard defined a number of escaped abstract character sequences consisting of a backslash (`\`, U+005C) followed by a single Latin letter, which expand to a predefined abstract character.
+
+[[escape-sequences-in-text-literals]]
+.Escaped abstract character sequences
+[cols="2*m, 1", options="header"]
+|===
+| Sequence
+| Character
+| Description
+
+| \a
+| U+0007
+| Alert (Beep, Bell)
+
+| \b
+| U+0008
+| Backspace
+
+| \e
+| U+001B
+| Escape character
+
+| \f
+| U+000C
+| Formfeed Page Break
+
+| \n
+| U+000A
+| Line Feed
+
+| \r
+| U+000D
+| Carriage Return
+
+| \t
+| U+0009
+| Horizontal Tab
+
+| \v
+| U+000B
+| Vertical Tab
+
+| \s
+| U+0020
+| Whitespace
+
+d| `\⏎` (escaped newline in source file)
+d| N/A
+| Ignores the newline
+|===
+
+// TODO: `'a'.to_utf8 == a.to(Codepoint<UTF8>); "a".to_utf8 == a.to(String<UTF8>)`.
+
+// .Normalization in text literals
+// ====
+// ```nx
+// # In Unicode, `f` is U+0666 and `ф` is U+0444
+// #
+//
+// 'f' # OK, `'\x0066'ucs`
+// 'ф' # OK, `'\x0444'ucs`
+//
+// 'f'ascii_ # OK, `'\66'ascii_`
+// # 'ф'ascii_ # Panic! Can not represent U+0444 in ASCII
+//
+// "å" # OK, normalized to `"\x00E5"ucs2`
+// 'å' # OK, normalized to `'\x00E5'ucs2`
+//
+// '👍'ucs4 # OK, `'\x1F4BB'ucs4`
+//
+// "👍🏻"ucs4 # OK, `"\x1F4BB\x1F3FB"ucs4`
+// # '👍🏻'ucs4 # Panic! Can not normalize to a single codepoint
+// ```
+// ====
+
+[NOTE]
+====
+[%noindex]
+The following normalization scenarios are possible, yet to discuss.
+
+* Forced normalization.
++
+--
+
+[%noindex]
+A combined grapheme is always attempted to be normalized, even if the target encoding supports the combination.
+
+[%noindex]
+Pros:
+
+* Abstract characters are always encoded in the most compact way.
+
+* If a editor displays a combined grapheme as a single glyph, then it would be natural to think of it as of a single codepoint in the target encoding.
+
+[%noindex]
+Cons:
+
+* A editor may display a combined grapheme as two distinct glyphs, and it would be confusing to think of it as of a single codepoint in the target encoding.
+
+* A developer must always keep Unicode normalization rules in mind.
+--
+
+* Normalization on-demand.
++
+--
+[%noindex]
+If a combined grapheme is directly supported by the target encoding, it is used.
+Othwerise, if the target encoding supports a normalized grapheme variant only, it is used instead.
+
+[%noindex]
+Pros:
+
+* The mapping stays as close to the source as possible, making use of suitable alternative grapheme representations only when required.
+
+[%noindex]
+Cons:
+
+* Even if a target encoding supports the normalized variant, and a editor displays it as a single glyph; the resulting grapheme would still be combined.
+--
+
+* No normalization at all.
+If target encoding does not support this exact combination, it would panic.
+====
+
+==== Numerical codepoints
+
+A numerical codepoint is a codepoint encoded as an explicit numerical value, e.g. ⟨f⟩ encoded as `\102`.
+
+A numerical codepoint may be in either octal (`\o141`), decimal (`\96`) or hexadecimal (`\x61`) base.
+In either base, regardless of the literal's encoding, the numerical value has big endianess, for example `ф` is encoded as `\x84d1`.
+
+A numerical codepoint may map to an invalid (i.e. not defined in) abstract character in the literal's charset, but its bitsize must not exceed the maximum allowed by the charset.
+For example, `'\xffffffffffffffff'` would trigger panic for the most of the possible charsets, because no charset defines 64 bits as its codepoint's size.
+
+A numerical codepoint value may be wrapped in curly brackets to clearly define its boundaries.
+For example, `"\{97}1" == "a1"`.
+An unmatched bracket would trigger panic.
+
+Without brackets, a numerical codepoint value is terminated either with a grapheme outside of the base's allowed graphemes range, or at the end of the containing literal.
+For example, in `"\97f" == "af"`, the numerical codepoint in decimal base is terminated with a non-decimal grapheme `f`.
+
+Numerical codepoint values do not allow neither literal prefixes nor literal suffixes, for example `\{1ki8}` would trigger panic.
+
+Numerical codepoint values allow non-trailing underscores.
+
+.Numerical codepoint syntax
+[syntax]
+----
+numerical_codepoint =
+  ("\o", {octal, "_"}-, "_"-) |
+  ("\o", "{", {octal, "_"}-, "_"-, "}") |
+
+  ("\", {digit, "_"}-, "_"-) |
+  ("\", "{", {digit, "_"}-, "_"-, "}") |
+
+  ("\x", {hex, "_"}-, "_"-) |
+  ("\x", "{", {hex, "_"}-, "_"-, "}");
+----
+
+==== Character literals
+
+A character literal is a text literal comprised of a single abstract character comprised of a single codepoint wrapped in single quotes (`'`), for example `'a' == '\97'`.
+
+A character literal is considered a scalar literal.
+
+An unconstrained character literal has type `Char<UCS>`.
+
+`UCS` is the language-defined default charset for a character literal.
+
+A charset literal suffix is defined by applying the `@[LiteralSuffix]` annotation to a static functor constrained to a single `@(Char)` argument.
+A charset suffix may be applied to a character literal, which alters the literal's charset, for example `'a'ucs`.
+Depending on the functor implementation, if the target charset does not contain the literal's abstract character, a compiler should panic.
+
+.Applying a charset suffix to a character literal
+====
+```nx
+'a' == 'a'ucs : Char<UCS> # Default
+
+@[LiteralSuffix(/(us)?ascii/, /iso646us/)]
+namespace ISO646::US <~ Charset\<7>
+  def (~@(Char)) ~@(Char<self>)
+    # Basically, return the codepoint if it's less than 128.
+    # Otherwise, panic!
+  end
+end
+
+'a'ascii : Char<ISO646::US> # Another charset applied
+# 'ф'ascii # Panic! `ISO646::US` does not contain this abstract character
+```
+====
+
+[[character-literal-integral-suffix, Applying an integral literal suffix to a character literal]]
+A character literal may have an integral literal suffix, which would constrain it to an integral literal of kind defined by the suffix equal to the codepoint's numerical value.
+For example, `'a'u8 == 97u8`, `'豈'i16 == (0xF900)i16 == -1792i16`.
+
+.Character literal syntax
+[syntax]
+----
+character_literal = "'", unicode | {numerical_codepoint}, "'";
+----
+
+==== String literals
+
+A string literal is a text literal comprised of an arbitrary amount (including zero) of abstract characters wrapped in double quotes (`"`) or slashes (`/`), for example `"f"`, `"å\0"`, `/bar/`.
+
+A string literal is considered a scalar literal.
+
+TIP: The NUL character is NOT appended implicitly to a string literal.
+Instead, it must be done manually.
+
+A string literal has type `String<E, Z>`, where `Z` is the exact amount of codeunits in the literal, for example `"få\0" : String<UTF8, 4>`, `"foo"ucs2 : String<UCS2, 6>`.
+
+`UTF8` is the language-defined default encoding for a string literal.
+
+An encoding literal suffix is defined by applying the `@[LiteralSuffix]` annotation to a static functor constrained to a single `@(String)` argument.
+An encoding suffix may be applied to a string literal, which alters the literal's encoding, for example `'a'utf8`.
+Depending on the functor implementation, if the charset defined by the target encoding does not contain at least one abstract character from contained in the literal, a compiler should panic.
+
+.Applying an encoding suffix to a string literal
+====
+```nx
+"a" == "a"utf8 : String<UTF8, 1> # Default values
+
+@[LiteralSuffix(/(us)?ascii/, /iso646us/)]
+namespace ISO646::US <~ Encoding<self, 7>
+  def (~@(String)) ~@(String<self>)
+    # Basically, build a string containing the same
+    # codepoints while their values are less than 128.
+    # Otherwise, panic!
+  end
+end
+
+"a"ascii : String<ISO646::US, 1> # Another encoding applied
+# "ф"ascii # Panic! `ISO646::US` does not contain this abstract character
+```
+====
+
+[[string-literal-integral-suffix, Applying an integral literal suffix to a string literal]]
+A string literal may have an integral suffix, which would constrain it to an array of integral literals of kind defined by the suffix equal to the numerical values of codeunits' making up the literal's abstract characters.
+If the type defined by the literal can not contain a codeunit value in the literal's encoding, a compiler panics.
+For example, `"aф"u8 == [0x61u8, 0xd1u8, 0x84u8] : UInt8[3]`.
+
+.String literal syntax
+[syntax]
+----
+string_literal = "\"", {unicode | numerical_codepoint}, "\""
+string_literal = "/", {unicode}, "/";
+----
+
+===== Regex literals
+
+A string literal wrapped in `//` is called a regex literal.
+
+Neither of the xref:escape-sequences-in-text-literals[escape sequences] work in a regex literal, but `\/`.
+Therefore, numerical codepoints are not usable in regex literals.
+
+===== Heredocs
+
+A heredoc is a string literal spanning through multiple lines.
+It begins and terminates with the same sequence of ASCII characters.
+
+A heredoc literal value (the text) must be wrapped in newlines.
+
+A heredoc opening sequence may be wrapped in parentheses and optionally applied literal suffixes to.
+Suffixes affect a heredoc literal in the same way as they would affect a simple string literal.
+
+The first token of a heredoc terminating sequence must be the first non-control character in a source line.
+Once the terminating sequence is matched, a compiler treates the heredoc literal as complete; it allows, for example, to call a method immediately after the terminating sequence, e.g. `SQL.upcase`.
+
+A heredoc is aligned at the least indentation.
+Escaping a newline (`\⏎`) may affect the least indentation.
+The first line of a heredoc does not have a newline character prepended.
+The last line of a heredoc does not have a newline character appended.
+
+TIP: A good formatting practice is to always make the least indentation to align with the line containing the beginning heredoc sequence.
+The terminating sequence should be placed on a new line.
+Sequences should be in uppercase.
+
+.Heredocs
+====
+```nx
+assert(<<-SQL
+SELECT foo
+  FROM bar
+SQL == "SELECT foo\n  FROM bar")
+
+(
+  # This is ill-formatted: the line containing `SELECT`
+  # should be indented by four spaces instead of two.
+  # Note that the indentation of the
+  # terminating sequence does not matter.
+  assert(<<-(sql)ascii
+  SELECT foo
+FROM bar
+sql == "  SELECT foo\nFROM bar")
+)
+
+assert(<<-SQL
+
+  SELECT
+  FROM bar\
+    WHERE SQL
+
+SQL == "\nSELECT\nFROM bar  WHERE SQL\n"
+```
+====
+
+.Heredoc syntax
+[syntax]
+----
+(* NOTE: Opening and closing sequences must be equal! *)
+heredoc =
+  "<<-",
+  (
+    "(", seq(en | underscore), ")",
+    {literal_suffix}
+  ) | seq(en | underscore),
+  nl,
+  seq(unicode),
+  nl,
+  seq(en | underscore);
+----
+
+=== Symbol literals
+
+For a type restriction `R`, a symbol literal may unambiguously match a type `T` satisfying the restriction `T ~ R`, whereas the symbol value matches the last element of full path identifier of `T` in accordance to the xref:symbol-literal-matching-algorithm[].
+
+.Symbol literal matching algorithm
+[[symbol-literal-matching-algorithm]]
+The algorithm is defined as follows:
+
+. The exact value of a symbol is compared directly with the last part of every type path matching the expression, until equal.
+If matched, success.
+
+. If the symbol value is not explicit:
+
+.. The symbol value is lower-cased, any non-letter and non-digit abstract character is removed; this is called a normalized value.
+.. Last parts of every type path to be compared with which is not an explicit identifier, is also normalized.
+.. The normalized symbol value is compared with each normalized last part, until equal.
+If matched, success.
+
+. No match, thus failure.
+
+If a symbol literal expands to a compile-time constant value, it may be then suffix-casted to another type, e.g. `(:max)u8 == 255u8`.
+
+Symbols can only be used as literals and expand during compilation.
+There is no built-in runtime `Symbol` type.
+
+.Using symbols
+====
+The following example demonstrates suffix-casting of a symbol literal.
+
+```nx
+assert((:max)u8 == UInt8::Max)
+assert((:Min)i == SInt32::Min)
+```
+
+The following example demonstrates enum values lookup.
+
+```nx
+enum Foo
+  val Bar
+  alias `Бар to Bar
+
+  val Baz
+end
+
+def is_baz?(foo : Foo)
+  # `Foo#==` expects `Foo`,
+  # thus `:bar` properly
+  # expands to `Foo::Bar`
+  foo == :bar
+end
+
+# Using an explicit symbol value here
+assert(not is_baz?(:`Бар))
+```
+
+The following example demonstrates symbol expansion in case branches.
+
+```nx
+struct A::B::C;
+
+final var = Std@rand(42, C())
+
+case var
+when :int # Properly expands to `Int`, which is legal
+  Std.out << "Is int"
+when :c # Expands to `A::B::C`
+  Std.out << "Is A::B::C"
+end
+```
+
+The following example demonstrates symbol ambiguity.
+
+```nx
+enum Foo
+  val Bar
+  val Baz
+end
+
+enum Qux
+  val Bar
+  val Quux
+end
+
+def is_bar?(e)
+  e == :bar
+end
+
+# # It would go through every type matching
+# # the restriction  (which is none), and panic
+# # upon `Foo::Bar` vs. `Qux::Bar` ambiguity.
+# assert(is_bar?(:bar)) # Panic!
+
+# This works, because the specialization
+# would have `e : Foo` restriction.
+assert(is_bar?(Foo::Bar))
+
+# # This would panic upon ambiguity between
+# # `e == Foo::Bar` vs. `e == Qux::Bar`.
+# assert(is_bar?(Std@rand(Foo::Bar, Qux::Bar))) # Panic!
+```
+====
+
+// TODO: `Foo::*` in type expressions
+
+== Aggregate literals
+
+TODO: Restrictions with aggregate types? `~ \(Array)`, `~ \(Array<Size>)`.
+
+The generic argument determining the element type of the type an aggregate literal is constrained to is inferred to a variant of the literal's values' types.
+If an aggregate literal consists of likely-fractional and fractional literals, then the element type is inferred to be a fractional type.
+
+For a tuple literal, the type is inferred for each element separately.
+
+// TODO: Actually, they allow variants, rationals etc. The hardware support differs.
+// Vectors and tensors don't allow types other than integer and IEEE floats, thus does not allow variants.
+
+```nx
+[1, 1] : SInt32[2]
+[1i16, 1] : SInt16[2]
+[1u, 1] : UInt32[2]
+[1u, 1i] : ?<UInt32, SInt32>[2]
+[1, 0.5] : FBin64[2]
+[1, 0.5d32] : FDec32[2]
+[1u, 0.5] : ?<UInt32, FBin64>[2]
+[1u, 1f] : ?<UInt8, FBin64>[2]
+
+[1, 1p32] : Posit32[2]
+[1p, 1p32] : Posit32[2]
+
+# [1, 1p32, 1u8] # Panic! Can not unambiguosly infer type
+                 # of `1` -- must constrain explicitly
+[1u, 1p32, 1u8] : ?<Posit32, UInt8>[2] # OK
+```
+
+=== Array literals
+
+An array literal is constrained to the `Array` type.
+
+=== Tensor literals
+
+```nx
+# r, l0 -- row
+# c, l1 -- column
+
+# It could work, because `(\SInt32)x2` is
+# not allowed (must be a runtime type).
+(SInt32)x4 : Vector<SInt32, 4> # (\i)x4
+(FBin64)x4x4c : Matrix<FBin64, 4, 4, 0> # (\f)x4x4c
+($double)x2x3x4l2 : Tensor<$double, 2, 3, 4, 2> # (\$d)x2x2x4l2
+(XDec<2, 2>)x2 # (\Df2)x2
+(XBin8)x3      # (\Q8)x3
+```
+
+=== Tuple literals
+
+=== Range literals
+
+== Magic literals
+
+.TODO:
+--
+```nx
+# Quoted string
+#
+
+%q(), %qucs2[], %qutf16le<>
+%utf32be[] # Works if `utf32be` is unambiguously `Charcoding`
+
+%qutf16-EOF
+Hello
+EOF
+
+# Range
+#
+
+%r[1 2], %ri(min 0), %fr[2 5), %ru8(1 max]
+
+# Containers
+#
+
+%i[1 2] # Array
+%i<1 2> # Vector
+%i(1 2) # Tuple, but why?
+%i(foo: 1, bar: 2) # That's why
+%i|[1 2]|r # Tensor (row-major); `|m0` -- ditto
+%c[hi] # Array of chars
+%casciiu8<hi> # Vector of chars
+%ucs[hello] # Works if `ucs` is unambiguous `Charset`
+%w[hello world], %wutf16le(a b) # OK
+```
+--
+
+Magic literals is a unified syntax for:
+
+. Array, tuple and vector container literals, allowing:
+
+.. To apply literal suffixes on the container itself instead of on each of its elements;
+
+.. To avoid repeated typing of separating commas.
+
+. xref:_quoted_string_literals[].
+
+A magic literal requires at least one literal suffix to be specified.
+
+A magic literal which is a character container literal or a quoted string literal is a _magic text literal_.
+
+Elements within a magic literal are separated by spaces, unless it is a magic text literal.
+In a magic text literal, every character is meaningful, including spaces.
+
+Outside of a magic text literal, a sequence of non-digit characters is considered a symbol literal (assuming that `:` is omitted).
+
+.Magic literal syntax
+[syntax]
+----
+magic_literal_values =
+  [
+    literal_value,
+    {" ", literal_value}
+  ];
+
+magic_tuple_literal =
+  "(", magic_literal_values, ")";
+
+magic_array_literal =
+  "[", magic_literal_values, "]";
+
+magic_vector_literal =
+  "<", magic_literal_values, ">";
+
+magic_tensor_literal =
+  "|", magic_literal_values, "|",
+  [tensor_literal_dimension_appendix];
+
+(* If literal suffixes are missing, the container
+  type is inferred from its values. *)
+magic_literal =
+  "%",
+  {literal_suffix}-,
+  (
+    magic_tuple_literal |
+    magic_array_literal |
+    magic_vector_literal |
+    magic_tensor_literal
+  );
+----
+
+=== Word literals
+
+A magic literal allows special `w` and `*w` major suffixes.
+Either turns the literal into a container of space-separated strings, i.e. **w**ords.
+The `*w` variant expands to a container of hard string copies instead of pointers to strings.
+
+.Word literals
+====
+```nx
+assert(%wutf8(foo barbaz) ==
+  ("foo", "barbaz") :
+  Tuple<
+    String<UTF8, 3>*s,
+    String<UTF8, 6>*s
+  >)
+
+assert(%*w[foo barbaz] ==
+  [*"foo", *"barbaz"] :
+  Variant<
+    String<UTF8, 3>,
+    String<UTF8, 6>
+  >[2])
+```
+====
+
+=== Quoted string literals
+
+A **q**oted string literal begins with the `q` suffix.
+In a quoted string literal brackets act as the string quotes.
+
+.Quoted string literals
+====
+```nx
+assert(%qutf8["foo"] == %q("foo") == "\"foo\"")
+```
+====
+
+// a = "foo"
+// b = %c[foo]
+
+// `"foo" : String[3]*s` by default?
+// `let copy = *"foo"` works, because array of codeunits is copyable
+
+// "foo"
+// mut &"foo" : (mut String[3])*s
+
+// 0x20c # Whitespace char in UCS
+// %c[Hello]   # Chars
+// %*w[foo bar] # Words, copied
+// %q[Hello!]
+// %qucs[Hello!]

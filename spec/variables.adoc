@@ -1,0 +1,290 @@
+= Variables
+:icons: font
+
+// TODO: Prohibit `a += b += c`, but allow `(a += b) += c`?
+
+A variable is a pointer to a region of memory containg a value.
+
+// TODO: Variables can be declared. `decl let`
+
+== Declaration
+
+TODO: Declaring means setting an identifier and a type.
+Defining is giving it a meaningful value.
+Defining is done using the `:=` operator.
+
+// Declaration of a variable means declaring its identifier, re-assign-ability and optional type.
+
+// Definition of a variable means defining its storage.
+
+// External variables may be declared without definition, i.e. with undefined storage.
+
+An Onyx variable always has an either impilcitly or explicitly defined storage.
+// Therefore, an Onyx variable declaration always implies its definition.
+
+// An immediate assignment is an assignment to a variable in its definition statement.
+
+// A variable which has not been assigned to yet is an uninitialized variable.
+
+Accessing an uninitialized variable is undefined behavior, hence unsafe.
+
+It is possible to explicitly assign a variable to an `uninitialized T` value, where `T` is the variable type; such an assignment is unsafe.
+Such an explicitly uninitialized variable would be considered safely initialized in the later code.
+
+[source, onyx]
+====
+let x = unsafe! uninitialized SInt32
+# let x : SInt32 = unsafe! uninitialized # Ditto, the type is infered
+
+puts(x) # OK from the point of a compiler view.
+====
+
+Prior to an access from a specialization, a variable must be explicitly declared.
+
+== Variable storage
+
+A variable storage defines its location and lifetime boundaries.
+
+There are three variable storage options: static, instance or local.
+
+A variable declaration within a primitive, trait or enum requires an explicit `static` storage modifier.
+
+Variables declared within a struct have implicit `instance` storage by default.
+An explicit `instance` or `static` storage modifier can be specified for struct variables.
+
+== Static variables
+
+A static variable lifetime spans to the lifetime of the containing process.
+Therefore, a static variable is accessible at any point of the program execution.
+
+[[final-static-var-inline-assignment]]
+A final static variable must be both declared and assigned to in the same statement.
+
+[[final-static-const-var-readonly]]
+A final static variable containing a constant or scalar object may be placed into the read-only executable section.
+
+== Instance variables
+
+An instance variable exists in the state of a particular object instance.
+All instance variables are finalized after the instance is finalized, in undefined order.
+
+[[final-instance-var-initialization]]
+A final instance variable must be defined at the moment of the containing object instance initialization.
+Therefore, it must be defined either in the definition statement or in any initializer having access to the variable.
+
+Only structs can contain instance variable declarations.
+
+== Local variables
+
+Local variables exist in the scope of a single function call.
+Once the function returns, its local variables are finalized.
+
+[[final-local-var-separate-def]]
+A final local variable can have its definition separate from declaration.
+
+Prior to read, a local variable must be explicitly defined.
+
+Variables declared within functions have local storage by default.
+
+== Final variables
+
+A final variable is declared using the `final` keyword.
+
+A final variable can not be re-assigned to another object, but it can still contain a mutable, i.e. a partially changeable, object.
+
+xcite:final-static-var-inline-assignment[]
+
+xcite:final-static-const-var-readonly[]
+
+xcite:final-instance-var-initialization[]
+
+xcite:final-local-var-separate-def[]
+
+A definition of a non-final static variable within a function is guaranteed to happen at most once per this variable specialization.
+
+== Non-final variables
+
+== Lifetime
+
+Primitives and enums don't have lifetime, but classes do.
+
+In the end of their lifetime, a variable is finalized.
+
+=== Moving variables
+
+Only a *local* variable can be moved.
+
+TIP: It is hardly possible to detect use-after-move of a static or an instance variable, hence the restriction.
+
+Only an lvalue can be moved.
+
+A moved instance is an rvalue.
+
+// It is only possible to move into an assignable variable or into a function argument.
+
+Moving a variable does not preserve previous its lifetime status: if disabled (for example, with `@setalive(var, false)`), it would be enabled again.
+
+A moved variable is treated in the same way as an undefined one.
+It is thus possible to define a previously moved variable again.
+
+.Moving variables
+====
+```nx
+final a := Std::Twine("foo")
+let b := unsafe! uninitialized Std::Twine
+
+# If not disabling the lifetime, then `b` would be
+# finalized  upon moving into it, which is dangerous
+unsafe! @setalive(b, false)
+
+b <- a # Moving `a` into `b`; `b` could've been finalized here
+# a # Panic! Use-after-move
+
+unsafe! @setalive(b, true) # Make `b` alive again
+assert(b.upcase == "FOO")
+
+a := Std::Twine("bar") # Re-defining `a`
+
+# This function accepts an instance
+# rather than a pointer to one.
+def foo(twine : Std::Twine);
+
+foo(b)    # OK, would call a copy-initializer
+foo(<- b) # OK, move `b` instead of copying it
+# b # Panic! Use-after-move
+```
+====
+
+It is not possible to move a varible into another local variable definition, as it is hardly practical.
+Thus, there is only a copy-define operator `:=`, but no move-define.
+
+.No move-defining
+====
+```nx
+final a = Std::Twine("foo")
+final b := a # OK, copy-define
+# final c <- a # Panic! `c` is not defined yet
+```
+====
+
+== Assignment
+
+An assignment to a variable is re-writing the memory region it is pointing to.
+
+An assignment of a new value to a variable may be performed  by either copying the value or moving it, depending on the assignment operator.
+The return value of an assignment operation itself may be either a copy of the new variable value or a moved instance of the old variable value, depending on the assignment operator.
+
+|===
+| Operator | Example | `b` is... | `r` is...
+
+| `=`
+| `final r := a = b`
+| *Copied*
+| A *copy* of `a`
+
+| `++<<=++`
+| `final r := a ++<<=++ b`
+| *Copied*
+| *Moved* old instance of `a`
+
+| `++<-++`
+| `final r := a ++<-++ b`
+| *Moved*
+| A *copy* of `a`
+
+| `++<<-++`
+| `final r := a ++<<-++ b`
+| *Moved*
+| *Moved* old instance of `a`
+|===
+
+NOTE: For consistency reasons, `++<=++` would be a better choice for simple assignment instead of `=`.
+But it is already taken by the "less than or equal" comparison operator, and `=` is preferable due to familiarity.
+
+TIP: `<<` may be read as "`push the old value from the variable`".
+
+* `sval` (storage value): variables, dereferenced pointers
+* `mval` (moved value): return values, `(<- x)` results
+* `rval` (right value (historical)): everything else
+
+|===
+| Operation | Allowed? | Example
+
+| `sval = sval`
+| Yes, implies copying
+| `x = shared`
+
+| `sval = rval`
+| Yes, implies moving
+| `x = Std::Shared(y)`
+
+| `sval = mval`
+| Yes, implies moving
+| `x = copy(shared)`
+
+| `sval ++<-++ sval`
+| Yes, implies moving
+| `x ++<-++ shared`
+
+| `sval ++<-++ rval`
+| Yes, implies moving (TODO: Do not allow?)
+| `x <- 42`
+
+| `sval ++<-++ mval`
+| Yes, implies moving (TODO: Do not allow?)
+| `x <- (<- 42)`
+|===
+
+A pair of defined variables of any storage can be swapped using the swap operator `++<->++`.
+Swapping implies simulatenous moving of variable values into each other, thus it does neither copy nor finalize nor lead to use-after-move behavior.
+The return value of a swap operation itself is a copy of a new value of the left operand.
+
+TODO: Taking an address of an undefined variable is unsafe.
+It returns a pointer with defined storage, though.
+
+.Swapping variables
+====
+```nx
+let a := 1
+let b := 2
+
+let new_a := a <-> b
+
+assert(new_a == a == 2)
+assert(b == 1)
+```
+====
+
+[source, ebnf]
+--
+(*
+  A variable declaration. In different contexts, optional items
+  may become mandatory; for example, a final static variable
+  must have its definition in-line.
+*)
+var_decl =
+  (* In most cases, it's implicitly `def` *)
+  ["def" | "decl" | "impl"],
+
+  (* A mandatory accessibility modifier *)
+  ("final" | "let" | "get" | "set"),
+
+  (* An optional storage modifier, otherwise infered *)
+  ["static" | "instance" | "local" | "undefstor"],
+
+  (* An optional `var` keyword *)
+  ["var"],
+
+  (* A mandatory variable identifier *)
+  id,
+
+  (* An optional type restriction, otherwise infered *)
+  [":" | "~", type_expr],
+
+  (* An optional inline definition of the variable *)
+  ["=", expr];
+--
+
+TODO: `let x, y : T === let x : T, y : T; let x : ?, y : T === let x : Undef, y : T` VS. `let x, y : T === let x : Undef, y : T`.
+
+TODO: final uninitialized variables MUST not be placed in read-only memory, thus unsafe initialization of them is possible.

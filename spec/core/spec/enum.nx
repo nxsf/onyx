@@ -1,0 +1,65 @@
+enum SimpleEnum
+  val A
+  val B
+end
+
+@describe "A enum" => do
+  @it "is initializeable with a enum constant" => do
+    expect(SimpleEnum::A is? SimpleEnum)
+  end
+
+  @it "is initializeable with an integer literal" => do
+    expect(SimpleEnum(1) is? SimpleEnum)
+  end
+
+  @it "is initializeable with a symbol" => do
+    expect(SimpleEnum(:a) is? SimpleEnum)
+  end
+
+  @it "is comparable with a symbol" => expect(SimpleEnum(:b) == :b)
+
+  @it "can be switched on a symbol" => do
+    case SimpleEnum(0)
+    when :a expect(true)
+    else expect(false)
+    end
+  end
+
+  @it "can be switched on a enum constant" => do
+    case SimpleEnum(1)
+    when SimpleEnum::B expect(true)
+    else expect(false)
+    end
+  end
+
+  @describe "`:ord` method" => do
+    @it => expect((SimpleEnum(:a).ord : $int) == 0)
+  end
+
+  @describe "`:is?` method" => do
+    @it => expect(SimpleEnum::B.is?(:b))
+  end
+end
+
+enum ComplexEnum : UInt16
+  val Foo
+  val Bar
+  val Baz = 10
+  val Qux
+
+  static let sv = 42
+
+  static def sf { sv += 1 }
+
+  def is_bar?
+    return this.is?(:bar)
+  end
+end
+
+def complex_enum_spec
+  final e = ComplexEnum::Qux
+  assert((e.ord : $`unsigned int`) == 11)
+  assert(!e.is_bar?)
+  e.sf
+  assert(e.sv == 43)
+end

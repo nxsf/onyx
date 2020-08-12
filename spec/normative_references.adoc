@@ -1,0 +1,11 @@
+= Normative references
+
+The following documents are referred to in the text in such a way that some or all of their content constitutes requirements of this document.
+For dated references, only the edition cited applies.
+For undated references, the latest edition of the referenced document (including any amendments) applies.
+
+* ISO 9000:2015, Quality management systems — Fundamentals and vocabulary
+* ISO/IEC 9899:2018, Information technology — Programming languages — C
+* IEEE 754-2008, IEEE Standard for Floating-Point Arithmetic
+* ISO/IEC 10967 (all parts), Information technology — Language independent arithmetic
+* ISO/IEC 10646, Information technology — Universal Coded Character Set (UCS)

@@ -1,0 +1,69 @@
+[glossary]
+== Glossary
+
+Standard::
+A widely accepted specification.
+
+Specification::
+[quote, "ISO 9000:2015 § 3.8.7"]
+A document that states requirements.
+
+// [[term-abstract-character]]
+Abstract character::
+A entry in a _character set_ representing a _grapheme_ or a _sememe_, usually mapped to a single _codepoint_.
++
+A grapheme may be represented in multiple ways in a single character set, and also as a sequence of multiple abstract characters.
+For example ⟨å⟩ in Unicode is `å` (U+61 followed by U+030A) and also `å` (U+00E5).
+
+Allograph::
+One of many _glyphs_ representing the same _grapheme_.
+
+Character set::
+A mapping of _abstract characters_ to _codepoints_.
+Examples of character set are ISO/IEC 10646, ISO/IEC 646:US.
+
+// [[term-codepoint]]
+Codepoint::
+A numerical value representing an _abstract character_ from a _character set_.
++
+A codepoint may be _encoded_ in one or multiple _codeunits_.
+
+[[term-codeunit]]
+Codeunit::
+A sequence of bits in a certain _encoding_.
++
+Depending on the encoding, a single or multiple codeunits make up a _codepoint_.
+
+Combined grapheme::
+A _grapheme_ containing at least one _combining abstract character_.
+
+Combining abstract character::
+An _abstract character_ usually representing a _sememe_ and intended to modify other abstract characters when in a sequence, e.g. `◌̊` (U+030A).
+
+Character encoding::
+A way to encode a _codepoint_ into a sequence of bits.
++
+Character encoding is not to be confused with _character set_.
+However, sometimes a character encoding has the name of the character set, for example ISO/IEC 646:US (a.k.a. US-ASCII).
++
+Other examples of character encoding are UTF-8, UCS-2.
+
+// [[term-glyph]]
+Glyph::
+An elemental printable symbol intended to represent a _grapheme_.
+
+Grapheme::
+In the scope of this standard, a grapheme is what Unicode defines as a printable character
++
+[quote, "Meletis, D.", 'https://www.tandfonline.com/doi/full/10.1080/17586801.2019.1697412[Writing Systems Research (2019)]']
+A unit of writing which is (1) lexically distinctive, (2) has linguistic value (mostly by referring to phonemes, syllables, morphemes, etc.), and is (3) minimal.
++
+Graphemes include not only letters and digits, but also other printable symbols, such as arrows.
+A grapheme is notated with angle brackets, e.g. ⟨a⟩, ⟨A⟩, ⟨å⟩, ⟨1⟩, ⟨→⟩.
++
+In a _character set_, a grapheme is represented by one or multiple _abstract characters_.
+
+Sememe::
+An abstract semantic unit of meaning.
++
+In a character set, a sememe is an _abstract character_.

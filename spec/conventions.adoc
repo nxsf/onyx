@@ -1,0 +1,58 @@
+== Conventions
+
+[%noindex]
+This section describes conventions used in this specification.
+
+This specification may borrow terms and practices from different standards _on how to write standards_, such as _The ISO/IEC Directives, Part 2_.
+However, it does not aim to fully comply with either, unless explicitly stated another.
+
+.Specification language
+The specification is written in English language with Oxford spelling.
+
+=== Specification units
+
+[[term-specification-unit]]
+Specification unit::
+A specification unit is a paragraph, an example block, a syntax definition listing, a table or a figure.
+
+A specification unit other than an example block may be either normative or informative.
+An example block is always informative.
+
+A specification unit other than an example block is normative by default.
+The following notation is used for informative units:
+
+[TIP]
+--
+This is an informative paragraph.
+--
+
+A single paragraph contains a single statement or multiple closely related or logically bound statements.
+To help clarify the contents of a paragraph, it may contain a number of examples.
+
+A paragraph may not contain the same statements worded differently.
+In other words, a paragraph shall be written in the most unambiguous and shortest form.
+
+=== Examples
+
+An example contained in a specification unit other than an example block is called an inline example and inherits the normative status of the unit.
+
+====
+This example is informative.
+====
+
+An example block must not be indexed.
+Instead, it is considered related to the previous specification unit, or the containing section.
+
+== Terms
+
+Contents of a specification unit exist in the context of parent sections, recursively.
+For example, the term "specification unit" is contained in the same section as the current paragraph, thus considered already known.
+
+A term written in _italic_ with an adjacent index has an explicit definition in either this or another document at the index location.
+For example, the term _grapheme_ ^[T1]^  may be found at index T1 of this document.
+The term _specification_ ^+[ISO 9000:2015 § 3.8.7]+^) should be looked up in the ISO document.
+And this _term_ footnote:[An example definition.] definition is to be found in the footnotes.
+
+=== Syntax
+
+Syntax definitions may contain semantic definitions in comments, but these semantic definitions are NOT normative, and are for convenience use only.

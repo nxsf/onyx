@@ -1,0 +1,10 @@
+require "./tensor.nx"
+
+# A vector is a 1-D specialization of `Tensor`.
+#
+# ```
+# let v : (SInt32)x4 = <1, 2, 3, 4>
+# let v = %i<1 2 3 4>
+# ```
+alias Core::Vector<Type: T, Size: S> to Tensor<T, S, 0>
+end

@@ -1,0 +1,110 @@
+= Float
+
+[quote, Wikipedia]
+--
+[%noindex]
+In computing, floating-point arithmetic (FP) is arithmetic using formulaic representation of real numbers as an approximation to support a trade-off between range and precision.
+--
+
+A particular built-in `Float` type specialization maps to a valid IEEE 754-2008 (further referenced as _IEEE 754_) floating-point interchange format.
+
+A `Float` specialization representation in memory is defined in accordance to IEEE 754.
+
+An implementation must implement five basic `Float` specializations in accordance to basic formats specified by IEEE 754, either natively or in software.
+
+In addition to that, two non-basic specializations are declared, but are optional to implement.
+
+[[float-basic-formats]]
+.Basic `Float` specializations
+[cols="1m, 1, 2*m, 1", options="header"]
+|===
+| IEEE 754 format
+| Bitsize
+| Alias
+| `Float` specialization
+| Is basic?
+
+| binary16
+| 16
+| FBin16
+| Float<2, 11, 15>
+| No
+
+| binary32
+| 32
+| FBin32
+| Float<2, 24, 127>
+| Yes
+
+| binary64
+| 64
+| FBin64
+| Float<2, 53, 1023>
+| Yes
+
+| binary128
+| 128
+| FBin128
+| Float<2, 113, 16383>
+| Yes
+
+| decimal32
+| 32
+| FDec32
+| Float<10, 7, 96>
+| No
+
+| decimal64
+| 64
+| FDec64
+| Float<10, 16, 384>
+| Yes
+
+| decimal128
+| 128
+| FDec128
+| Float<10, 32, 6144>
+| Yes
+|===
+
+If a target natively supports an IEEE 754 format, then the type under the ISA namespace must alias to the according `Float` specialization, for example `alias SPARC::FQuad = FBin128`.
+
+If a target natively supports a non-basic format (even with a limited operations set), an Onyx compiler implementation must implement that format.
+For example, the `binary16` format is not basic, but often implemented, including some ARM and NVPTX targets; the `FBin16` specialization must be implemented for such targets.
+
+If a target natively supports an extended precision format, then it must be defined by the implementation.
+The naming convention for an extended precision format alias is `F{Base}E`, where `{Base}` is the extended basic format, for example `FBin64E`.
+For example, on x87 a target, the extended precision floating point format may be aliased as  `alias X87::Float80 = FBin64E = Float<2, 64, 16383>`, and the `Float<2, 64, 16383>` specialization would map natively to that format.
+
+[NOTE]
+====
+
+The C18 § F.2 standard states the following:
+
+[quote]
+--
+The `long double` type matches an IEC 60559[:1989] extended format, else a non-IEC 60559 extended format, else the IEC 60559 double format.
+
+++[++...]
+
+"Extended" is IEC 60559’s double-extended data format.
+Extended refers to both the common 80-bit and quadruple 128-bit IEC 60559 formats.
+--
+
+Therefore, `long double` in C does not neccessarily maps to `FBin64E`.
+Instead, it may map to `FBin128`.
+An implementation (and a user) should keep that in mind upon providing a C-Onyx floating type mapping.
+
+====
+
+An implementation must provide a way to specify mapping from three C floating-point types `float`, `double` and `long double` to Onyx types, for particular target, prior to compilation.
+However, an explicit coercion or conversion is still required to interoperate with C types.
+The mapping defines according `as` methods, for example `float <=> FBin32` mapping defines `$float.as(FBin32)` and `FBin32.as($float)` methods.
+
+An implementation should provide a pre-defined default mapping from C floating-point types to Onyx types for every target it supports.
+
+If a target type has the same arithmetic format as an IEEE 754 format, then it must be aliased to an according `Float` specialization.
+Otherwise, it may be mapped to an extended-precision floating-point as dictated by IEEE 754, iff it matches the extended-precision format requirements; x87 conforms this requirement, for example `alias FBin64E = Float<2, 64, 15> = X87::Float80`.
+Implementations not conforming to IEEE 754 must not be mapped to a `Float` specialization; for example, PowerPC extended precision type does not conform to IEEE 754, as it's merely a software emulation. Thus, no mapping must exist, even for `FBin64E`.
+
+A particular `Float` specialization implementation may be ensured during compilation using the `@@impl?` built-in compiler intrinsic and the `nx.Node:is_implemented` macro method, for example `if @@impl?(FBin16)` or `{% if nx.lkp("FBin16").is_implemented %}`.

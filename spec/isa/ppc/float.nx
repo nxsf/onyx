@@ -1,0 +1,18 @@
+alias PPC::FSingle = FBin32 # `$float`
+alias PPC::FDouble = FBin64 # `$double`
+
+# For GCC's experience on PowerPC `long double`s,
+# see https://gcc.gnu.org/wiki/Ieee128PowerPC.
+#
+
+# The "two 64 bits" `long double` variant.
+# Note that it's neither `FBin64E` nor `FBin128`.
+alias PPC::IBMFQuad = (FBin64, FBin64)
+
+{% if nx.target.ver >= "2.06" then %}
+  alias PPC::VSXFQuad = 2xFBin64
+{% end %}
+
+{% if nx.target.ver >= "3.0" then %}
+  alias PPC::FQuad = FBin128
+{% end %}

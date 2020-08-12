@@ -1,0 +1,6 @@
+[appendix]
+== Macros API
+
+```lua
+include::./macros.lua[]
+```

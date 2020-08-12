@@ -1,0 +1,18 @@
+require "./aggregate.nx"
+
+# A growing stack of values.
+decl mut primitive Core::Stack<Type: T, Size: S : @~size>
+  derive Aggregate;
+
+  # NOTE: The returned reference is temporal because the stack
+  # may be shrinked, so the memory region becomes undefined.
+  decl push(value: T) : T&tw throws SizeError
+
+  decl pop() : T throws SizeError
+  decl pop?() : T?
+  decl const size : $size
+
+  # NOTE: The returned reference is temporal because the stack
+  # may be shrinked, so the memory region becomes undefined.
+  decl mut? [](index: Size) : T&t(w = \mut?) throws SizeError
+end

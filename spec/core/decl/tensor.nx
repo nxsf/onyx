@@ -1,0 +1,30 @@
+require "./aggregate.nx"
+
+# A *D*-dimensional tensor of type *T*
+# with *L* being the leading dimension.
+#
+# As an aggregate type, a tensor has optional mutability.
+#
+# Tensor types can be shortcut in the following form:
+#
+# ```
+# let t = (SInt32)x2x3x4r
+# ```
+#
+# Where `SInt32` is the type, `2`, `3` and `4` are dimensions,
+# and `a` is from "aisle", which is shortcut for setting
+# the third dimension leading. Explicit `lN` form can be used
+# to specify leading dimension, beginning from 0.
+# There are also `r` (`l0`) for "row" and `c` (`l1`) for "column".
+decl primitive Tensor<
+  Type: T,
+  Dimensions: *D ~ %z,
+  Leading: L ~ %z
+>
+  derive Aggregate;
+
+  # TODO: It's not a product, but something else.
+  # Nonetheless, it demonstrates passing index pairs:
+  # `t1.product(t2, 1 => 2, 2 => 4)`.
+  decl product(another: self, *index_pairs[D::Size]: %z => %z)
+end

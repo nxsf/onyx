@@ -1,0 +1,97 @@
+require "./floating_point.nx"
+
+{%
+  -- Recommended, hence the default,
+  -- exponent size for given bit size.
+  nx.source.posit_exponents = {
+    [8]  = 0,
+    [16] = 1,
+    [32] = 2,
+    [64] = 3,
+  }
+%}
+
+@[LiteralSuffix(
+  regex: /^p(?<Bitsize>\d+)?(e(?<Exponent>\d+))?$/,
+  restriction: \{{
+    local bitsize = tonumber(nx.ctx.match["Bitsize"])
+    local exponent = tonumber(nx.ctx.match["Exponent"])
+
+    if bitsize then
+      -- TODO: Preserve known aliases,
+      -- e.g. `p32 : Posit32`, not `Posit<32>`.
+      if (
+        exponent or (
+          exponent = nx.source.posit_exponents[bitsize]
+        )
+      ) then
+        "Posit<" .. bitsize .. ", " .. exponent .. ">"
+      else
+        nx.panic("Must provide an explicit posit"
+          "exponent for given bitsize")
+      end
+    elseif exponent then
+      nx.panic("Can not have explicit posit "
+        "exponent without bitsize")
+    else
+      "Posit32"
+    end
+  }}
+)]
+primitive Posit<Bitsize: BZ ~ %Size, Exponent: E ~ %Size>
+  derive Fractional;
+
+  impl initialize(literal : L) forall L ~ %!Rational
+    \{%
+      -- Given `(0x12.FFp-3)p`
+      local whole = nx.lkp("L").whole -- `"12"`
+      local fraction = nx.lkp("L").fraction -- `"FF"`
+      local base = nx.lkp("L").base -- `"x"`
+      local power = nx.lkp("L").power -- `-3`
+
+      -- We have everything to build up a bit representation
+      local bits = "01001000101001111010101011001101"
+    %}
+
+    # We have `this` pointer, all we have is to write those bits.
+    # Just need to make sure we have right endianess,
+    # and target supports direct write for this bitsize.
+    unsafe! (this as UInt32&) := 0b\{{ bits }}
+  end
+
+  decl to(:: T): T forall T ~ Real
+end
+
+{% for bz, exp in nx.source.posit_exponents do %}
+  alias Posit{{ bz }}<Exponent = {{ exp }}> =
+    Posit<{{ bz }},  Exponent>
+{% end %}
+
+decl primitive Quire<Bitsize: B : @{Size}>
+  # Fused-multiply–add, i.e. `a * b + c`.
+  #
+  # ```
+  # let q = Quire<128>()
+  # assert(q.fmadd(10p, 2p, 5p).to_p == 25)
+  # ```
+  decl fmadd(a: Posit<P>, b: Posit<P>, c: Posit<P>): self forall P
+
+  # Fused-dot-product add *a* to *b*.
+  #
+  # ```
+  # let q = Quire<128>()
+  # assert(q.add(10p, 20p).to_p == 30)
+  # ```
+  decl add(a: Posit<B>, b: Posit<B>): self
+
+  # Fused-dot-product subtract *b* from *a*.
+  #
+  # ```
+  # let q = Quire<128>()
+  # assert(q.sub(30p, 20p).to_p == 10)
+  # ```
+  decl subtract(a: Posit<B>, b: Posit<B>): self
+  alias sub = subtract
+
+  decl to(:: T): T forall T ~ Real
+end

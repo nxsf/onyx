@@ -1,0 +1,7 @@
+[appendix]
+== Optimization
+
+Informative.
+
+This section acts as a single source of expectations on when it is possible to rely on a compiler for certain optimizations rather than write optimized code manually.
+This allows a user to write simpler code but be sure on that this code would be optimized.

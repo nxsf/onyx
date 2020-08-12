@@ -1,0 +1,19 @@
+require "./spec.nx"
+
+@describe "Union" => do
+  final switch := @rand?
+  final union : Union<SInt32, String<6>>
+
+  assert(@sizeof union) == 6)
+
+  if switch then union := 42
+  else union := "hello"
+
+  if switch
+    assert((unsafe! union <<= 43) as SInt32) == 42)
+  else
+    let another := "olleh"
+    assert((unsafe! union <=> another) as String<6>) == "olleh")
+    assert((unsafe! another as String<6>) == "hello")
+  end
+end

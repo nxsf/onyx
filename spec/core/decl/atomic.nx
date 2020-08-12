@@ -1,0 +1,242 @@
+require "./scalar.nx"
+
+# Operations on atomic types may be synchronized, depending on
+# provided memory ordering constraints and fences.
+# Atomic operations are still `fragile` and require extra attention
+# from the developer to become truly `threadsafe`.
+#
+# The memory layout of an atomic type is undefined.
+#
+# Theoretically, any `Numeric` type can be wrapped in `Atomic`.
+# In practice, only `Int`, `Float`, `Fixed` and their
+# `Imaginary` counterparts are expected to so.
+#
+# `Int` and `Float` variants are expected to be interchangeable
+# with their `_Atomic` counterparts, where appropriate
+# (see `as` method declarations in according reopenings).
+decl primitive Core::Atomic<Type: T ~ (Numeric)>
+  derive Scalar;
+
+  # Non-atomically retreive the underlying value.
+  # This method is allowed to be called on a `final` variable.
+  decl raw_get : T
+
+  # Non-atomically update the underlying value.
+  # Does not return anything to avoid confusion with `swap`.
+  decl raw_set(val : T) : Void
+
+  # Atomically fetch the underlying value.
+  # This method is allowed to be called on a `final` variable.
+  #
+  # ```
+  # final a = Core::Atomic(42)
+  # Core.assert(a == a.fetch == 42)
+  # ```
+  decl fetch(
+    ordering: Memory::Ordering = :seqcst,
+    syncscope: SS = ""
+  ) : T forall SS : @~string
+  alias == to fetch
+
+  # Atomically store the underlying value.
+  # Does not return anything.
+  # To store and also get the old value, use `swap` instead.
+  #
+  # ```
+  # let a = Core::Atomic(42)
+  # a.store(43)
+  # Core.assert(a == 42)
+  # ```
+  #
+  # TODO: Do we really need this method?
+  decl store(
+    val: T,
+    ordering: Memory::Ordering = :seqcst,
+    syncscope: SS = ""
+  ) : Void forall SS : @~string
+
+  # Atomically swap the underlying value.
+  # Returns the old value.
+  #
+  # ```
+  # let a = Core::Atomic(42)
+  # Core.assert(a = 43 == 42)
+  # ```
+  decl swap(
+    val: T,
+    ordering: Memory::Ordering = :seqcst,
+    syncscope: SS = ""
+  ) : T forall SS : @~string
+  alias = to swap
+
+  # TODO:
+  decl compare_and_exchange(
+    old: T,
+    new: T,
+    success_ordering: Memory::Ordering = :seqcst,
+    failure_ordering: Memory::Ordering = :seqcst,
+    syncscope: SS = ""
+  ) : Bool forall SS : @~string
+  alias cmpxchg to compare_and_exchange
+
+  # Atomically add to the underlying value.
+  # Returns the old value.
+  #
+  # Wraps if called on a `Rational`.
+  #
+  # ```
+  # let a = Core::Atomic(127i8)
+  # Core.assert(a += 1 == 127)
+  # Core.assert(a == -128)
+  # ```
+  decl add(
+    val: T,
+    ordering: Memory::Ordering = :seqcst,
+    syncscope: SS = ""
+  ) : T forall SS : @~string
+  alias += to add
+
+  # Atomically subtract from the underlying value.
+  # Returns the old value.
+  #
+  # Wraps if called on a `Rational`.
+  #
+  # ```
+  # let a = Core::Atomic(-128i8)
+  # Core.assert(a -= 1 == -128)
+  # Core.assert(a == 127)
+  # ```
+  decl subtract(
+    val: T,
+    ordering: Memory::Ordering = :seqcst,
+    syncscope: SS = ""
+  ) : T forall SS : @~string
+  alias sub, -= to subtract
+end
+
+reopen Core::Atomic<Int>
+  # Atomically apply AND operation to the underlying value.
+  # Returns the old value.
+  #
+  # ```
+  # let a = Core::Atomic(0b1001_0110)
+  # Core.assert(a &= 0b0011_0011 == 0b1001_0110)
+  # Core.assert(a == 0b0001_0010)
+  # ```
+  decl and(
+    val: T,
+    ordering: Memory::Ordering = :seqcst,
+    syncscope: SS = ""
+  ) : T forall SS : @~string
+  alias &= to and
+
+  # Atomically apply NAND operation to the underlying value.
+  # Returns the old value.
+  #
+  # ```
+  # let a = Core::Atomic(0b1001_0110)
+  # Core.assert(a.nand(0b0011_0011) == 0b1001_0110)
+  # Core.assert(a ==   0b1110_1101)
+  # ```
+  decl nand(
+    val: T,
+    ordering: Memory::Ordering = :seqcst,
+    syncscope: SS = ""
+  ) : T forall SS : @~string
+
+  # Atomically apply OR operation to the underlying value.
+  # Returns the old value.
+  #
+  # ```
+  # let a = Core::Atomic(0b1001_0110)
+  # Core.assert(a |= 0b0011_0011 == 0b1001_0110)
+  # Core.assert(a == 0b1011_0111)
+  # ```
+  decl or(
+    val: T,
+    ordering: Memory::Ordering = :seqcst,
+    syncscope: SS = ""
+  ) : T forall SS : @~string
+  alias |= to or
+
+  # Atomically apply XOR operation to the underlying value.
+  # Returns the old value.
+  #
+  # ```
+  # let a = Core::Atomic(0b1001_0110)
+  # Core.assert(a ^= 0b0011_0011 == 0b1001_0110)
+  # Core.assert(a == 0b0100_1010)
+  # ```
+  decl xor(
+    val: T,
+    ordering: Memory::Ordering = :seqcst,
+    syncscope: SS = ""
+  ) : T forall SS : @~string
+  alias ^= to xor
+
+  # Convert to an `_Atomic` integer counterpart.
+  #
+  # MUST be implemented if the target supports `_Atomic` types,
+  # i.e. `$__STDC_NO_ATOMICS__` is not defined.
+  #
+  # Non-fixed width integer types (e.g. `$int`) MUST be supported.
+  # Fixed (from `stdint.h`) width integer types SHOULD be supported.
+  #
+  # Signednesses of the types must match. A `final` atomic type
+  # can not be converted to a non-const type.
+  #
+  # It is not possible to directly convert to a lesser-bitsize type.
+  # Target information contained in the Macro API may be used
+  # to aid in implementing proper conversion logic.
+  #
+  # ```
+  # final a = Core::Atomic(42) : Core::Atomic<$int>
+  # a as $`const _Atomic int` # OK
+  # # a as $`_Atomic int` # Panic! Constantness mismatch
+  # # a as $`const _Atomic unsigned int` # Panic! Signedness mismatch
+  # a as $`const _Atomic int32_t` # May work, depending on target
+  #
+  # let b = Core::Atomic(42u16)
+  # a as $`const _Atomic unsigned short` # OK, turns into const
+  # ```
+  @[MayPanic("If target bitsize is less than the type's")]
+  @[MayPanic("On signednesses mismatch")]
+  @[MayPanic("On constantnesses mismatch")]
+  virtual decl as(:: T) forall T
+end
+
+reopen Core::Atomic<Float>
+  # Convert to an `_Atomic` C floating-point type.
+  #
+  # MUST be implemented if the target supports `_Atomic` types,
+  # i.e. `$__STDC_NO_ATOMICS__` is not defined.
+  #
+  # The target memory layout is defined by the
+  # `nx.c.const.[type].layout` macro constraint.
+  #
+  # Direct conversion is only possible to the same
+  # or greater bitsize floating point type, defined by the
+  # `nx.c.const.[type].bitsize` constraint.
+  # Otherwise, the `as!` method should be used.
+  #
+  # ```
+  # let a = Core::Atomic(42f64) : Core::Atomic<FBin64>
+  #
+  # # Is likely to succeed, unless `double`
+  # # has bitsize greater than 64
+  # a as $double # OK
+  #
+  # # as as $float # Most likely to fail
+  # ```
+  @[MayPanic("On a possibility of precision loss")]
+  virtual decl as(:: T) forall T
+
+  # Convert to an `_Atomic` C floatin-point type,
+  # allowing possible precision loss.
+  #
+  # ```
+  # let a = Core::Atomic(42f64) : Core::Atomic<FBin64>
+  # a as! $float # OK, but lesser precision
+  # ```
+  virtual decl as!(:: T) forall T
+end

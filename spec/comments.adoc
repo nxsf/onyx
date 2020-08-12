@@ -1,0 +1,9 @@
+# Comments
+
+TODO: Either allow both C and Onyx comments, or have a way to control if a comment participates in header and API doc generation.
+
+```nx
+# This comment is to be used everywhere
+# nx-noc[This comment is not to be exported in header].
+# nx-nodoc[No participation in API docs].
+```

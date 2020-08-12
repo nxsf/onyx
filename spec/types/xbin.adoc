@@ -1,0 +1,14 @@
+= Binary fixed-point
+
+[[term-q-number]]
+Binary fixed-point literals in Onyx use format insipred by the https://en.wikipedia.org/wiki/Q_(number_format)[Q number format].
+Therefore, a binary fixed-point type is also referenced as a _Q number_.
+
+Q number:: The built-in binary fixed-point numeric type, `XBin`.
+
+If a Q number is signed, then the most significant bit is occupied by the sign, limiting the maximum non-negative fraction value.
+
+A Q number fraction defines the amount of bits the represented value is shifted **l**eft by.
+A non-negative fraction absolute value must less than or equal to the bitsize minus one bit if the Q number is signed.
+If fraction is negative, then the value is shifted right instead (e.g. `3Q8f-4 == (0b0000_0011 << 4) == 0b0011_0000 == 96`).
+In case of a negative fraction, it is not possible to infer the number's bitsize.

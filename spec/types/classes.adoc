@@ -1,0 +1,7 @@
+= Classes
+
+Classes are like structs.
+The have optional mutability (`const` by default).
+Field and methods are `private` by default.
+Do not have default initializer.
+Allow definition of finalizer.

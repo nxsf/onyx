@@ -1,0 +1,101 @@
+= Pointers
+
+TODO: Tags may be not supported on the target platform.
+Can use `nx.target.features.pointer_tagging`.
+
+== Address spaces
+
+Address space numerals and according identifiers are platform-dependent.
+
+TODO: A platform is a combination of ISA, vendor, ISE and OS.
+
+A compiler is allowed to elide memory allocations if it is able to prove that the pointee is never actually spilled into memory.
+A never-addressed, never-coerced pointer is allowed to be elided?
+
+General-purpose computing platforms, such as x86 and ARM ISAs with OSes, usually have a single generic address space 0 (gen).
+The bitsize of such a pointer is platform-specific, for example 64 on x86_64.
+Ranges of valid generic addresses are also platform-specific, for example 0-0x0000_7FFF_FFFF_FFFF on x86_64 (lower canonical addresses), but 0-0x000F_FFFF_FFFF_FFFF on ARMv8 (user space).
+
+Note that ranges are not enforced by Onyx fundamental types.
+The behaviour on range violation is undefined.
+However, some targets may have constrained types defined, e.g. `X86::LowAddress`.
+
+TIP: This is because on some platforms ranges are runtime-defined, e.g. with TnSZ fields in the TCR_ELx registers on ARMv8, where TCR_EL1.T0SZ sets address size of User space of EL1 space.
+
+For baremetal platforms, such as kernels, address spaces matter; the same address values may overlap in different address spaces, therefore information on address space is conveyed by a pointer type.
+
+Some pointer specializations define conversion and coercion to other address spaces and C pointer types.
+
+.x86 "Chickadee"
+|===
+| # | ID | Space | Bitsize | Range
+
+| 0
+| user
+| Low canonical addresses for user access
+| 64
+| 0-0x0000_7FFF_FFFF_FFFF
+
+| 1
+| kernel
+| Higher canonical addresses for kernel access
+| 64
+| 0xFFFF_8000_0000_0000-0xFFFF_FFFF_FFFF_FFFF
+|===
+
+.ARMv8-a
+|===
+| # | ID | Space | Address size | Range
+
+| 0
+| nsel0
+| Non-secure EL0
+| 64
+| 0-0x000F_FFFF_FFFF_FFFF
+
+| 1
+| nsel1
+| Non-secure EL1
+| 64
+| 0xFFF0_0000_0000_0000-0xFFFF_FFFF_FFFF_FFFF
+
+| 2
+| nsel2
+| Non-secure EL2
+| 64
+| 0-0x000F_FFFF_FFFF_FFFF
+
+| 3
+| el3
+| EL3
+| 64
+| 0-0x000F_FFFF_FFFF_FFFF
+
+| 4
+| sel0
+| Secure EL0
+| 64
+| TODO:
+
+| 5
+| sel1
+| Secure EL1
+| 64
+| TODO:
+
+| 6
+| sel2
+| Secure EL2 <1>
+| 64
+| TODO:
+|===
++
+<1> Support for Secure EL2 was added in Armv8.4-A.
+
+****
+
+From https://developer.arm.com/architectures/learn-the-architecture/memory-management/address-spaces-in-armv8-a:
+
+> If you set HCR_EL2.E2H to 1 it enables a configuration where a host OS runs in EL2, and the applications of the host OS run in EL0. In this scenario, EL2 also has an upper and a lower region.
+
+****

@@ -1,0 +1,6 @@
+require "./numeric.nx"
+
+# A real number.
+trait Real
+  derive Numeric;
+end

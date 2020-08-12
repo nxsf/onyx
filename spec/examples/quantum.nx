@@ -1,0 +1,12 @@
+
+def quantum_random() : Bit
+  let q = QBit()
+  q.reset()
+  return q.get()
+end
+
+def set_state(qbit : QBit&, state : Bit) : _
+  if (qbit.get() != state)
+    ~qbit
+  end
+end

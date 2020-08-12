@@ -1,0 +1,14 @@
+# In x86, freestanding complex numbers are better to be of `FBin64`, so they fit in a single XMM register. Otherwise, pairs of `FBin32` complex numbers are preferred.
+reopen Complex<FBin64>
+  # Use `ADDPD` instruction.
+  native impl .add(self) : self
+
+  # Use `ADDSD` instruction.
+  native impl .add_real(FBin64) : FBin64
+
+  # Use `SUBPD` instruction.
+  native impl .subtract(self) : self
+
+  # Use `SUBSD` instruction.
+  native impl .subtract_real(FBin64) : FBin64
+end

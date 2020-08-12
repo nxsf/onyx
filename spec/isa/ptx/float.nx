@@ -1,0 +1,7 @@
+alias PTX::Half = FBin16
+alias PTX::Float = FBin32
+alias PTX::Double = FBin64
+
+# The TF32 floating-point number format, for example
+# an alias to natively-implemented `FBin<10, 8>`.
+decl type PTX::TFloat32;

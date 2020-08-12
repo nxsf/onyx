@@ -1,0 +1,81 @@
+= Enum
+
+== Declaration
+
+// Can not be incomplete.
+
+Can be reopened.
+
+Does not have neither `initialize` nor `finalize` methods, but is functor: `::()` function with symbol (`Foo(:a)`), magic (`Foo(Foo::A)`) and numeric (`Foo(0)`) overloads.
+
+Also has `Foo::A` constant, which refers to this particular value of `Foo`.
+
+Has `.is?(:a)`, `.is?(Foo::A)`, `.is?(0)` methods.
+
+Like in C, `$int` by default (i.e. the best int for target).
+
+```nx
+enum Foo : $int
+  val A
+  val B = 3
+  val C
+  alias d to C
+
+  static def foo;
+
+  def bar
+    this : self : Foo
+  end
+end
+
+let foo = (Foo::A : Foo)
+foo == Foo(0) == Foo(:A) == :a # Can compare with a symbol
+foo.ord == 0 : $int
+
+# foo + bar # Does not make sense
+# foo | bar # Ditto
+```
+
+== Flag
+
+Allows bitwise arithmetics on self.
+May contain a bitwise of self.
+Only allows values of power of two, e.g. `B = 256`.
+`pass:[$`unsigned int`]` by default.
+
+```nx
+flag Mode
+  val Read  # = 0
+  val Write # = 1
+  val Execute = 8
+  val Delete # = 16
+end
+
+final mode = Mode::Read | Mode::Write
+
+# Symbol expressions are allowed!
+final mode : Mode = :read | :write
+final mode = Mode(:read | :write)
+
+# Switch on exact value!
+case mode
+when :read
+  Std.puts "Can read only!"
+when :write
+  Std.puts "Can write only!"
+when :read | :write
+  Std.puts "Can both!"
+end
+
+if mode & :read { Std.puts "Can read!" }
+if mode & :write { Std.puts "Can write!" }
+```
+
+TODO: If type is omitted, enum is any type, e.g. `enum Foo;`
+If there are no negative elements, the type is biased to be `~ UInt`.
+Can specify sign, e.g. `enum Foo ~ SInt;`.
+Also can specify bitsize range, e.g. `enum Foo ~ SInt<16..>`.
+
+TODO: Within Onyx boundaries, a enum size is undefined, and taken what's best for target and optimization.
+But if it's taken pointer of, or returned from an exported function, then it'd be exactly that.
+This is the blackbox idea with strictly defined boundaries.

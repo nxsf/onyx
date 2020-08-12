@@ -1,0 +1,160 @@
+== Directives
+
+A _directive_ is an instruction to the compiler.
+
+=== File dependency directives
+
+File dependency directives are `require` and `import` directives.
+
+A file dependency directive makes the program depend on a source file at the provided pathname.
+The same file may be referenced from multiple file dependency directives, but it is guaranteed to be processed exactly once first time it is referenced.
+If the same file is referenced both from a `require` and `import` directive, then it is processed exactly twice.
+
+The order in which files are referenced both from inside a single file dependency directive and the global order matter.
+A user should keep in mind the actual entities structure so they do not reference an undeclared yet entity.
+
+A single file dependency directive may contain multiple pathnames, as well as patterns in pathnames.
+
+Filename and pathname resolution rules in a file dependency directive shall conform to sections 4.7, 4.8 and 4.13 of IEEE Std 1003.1-2017.
+Pathname pattern matching notation shall conform to section 2.13 of IEEE Std 1003.1-2017.
+
+TIP: The IEEE Std 1003.1-2017 is known as the POSIX standard.
+Pathnames in file dependency directives shall conform to the POSIX standard so they stay cross-platform.
+
+// TODO: Reference the pathname substitution standard section.
+An optional `at` clause in a file dependency directive substitutes the provided pathname with every pathname listed in the `from` clause in a file dependency directive.
+If an `at` clause is present, then `from` clause shall be present with the explicit `from` keyword.
+For example, `require "bar/foo.nx"` is equivalent to `require from "foo.nx" at "bar"`.
+
+An implementation shall provide a way to add to the list of base lookup paths for every file dependency directive class in the manner similar to `-I` and `-L` flags ubiquitous in C compilers.
+
+The Macro API provides ways to both invoke a file dependency directive as well as alter the base lookup paths.
+
+==== `require` directive
+
+A `require` directive makes the program to include an Onyx source file into the program source.
+
+Recursive `require` directives are allowed.
+
+[syntax]
+----
+require_directive =
+  "require",
+
+  @unord(
+    (* Path(s) of the required file *)
+    (["from"], path, {",", path}),
+
+    (* The base path *)
+    ["at", path]
+  );
+----
+
+==== `import` directive
+
+An `import` directive makes the program aware of entities contained in the imported file such that those entities are not a part of the program itself, but rather can be referenced from the program.
+
+An imported file may contain source code in a language other than Onyx.
+
+[TIP]
+--
+The Standard defines interoperability specifications for the following languages: Onyx, C, Lua.
+However, an implementation is not limited to those languages defined in the Standard.
+
+Read more about interoperability in Interoperability.
+--
+
+[syntax]
+----
+(*
+  Import a file written possibly
+  in a language other than Onyx.
+
+  ```
+  import from "stdio.h" in "C"
+  import in "Rust" from "main.rs", "aux.rs" at "/mypath/"
+  ```
+*)
+import_directive =
+  "import",
+
+  @unord(
+    (* The source language of an imported file *)
+    ("in", string),
+
+    (* Paths to the imported files *)
+    ("from", string, {",", string}),
+
+    (* The base path for the imported files *)
+    ["at", string]
+  );
+----
+
+=== `using` directive
+
+The `using` directive either injects a namespace `N` into the local scope, so that members of `N` are directly accessible from the local scope; or applies a refinement `R` in the local scope; or defines an alias `A` to `B` effective in the local scope.
+
+[syntax]
+----
+using =
+  using_namespace |
+  using_refinement |
+  using_alias;
+
+using_namespace =
+  "using",
+  ["namespace"],
+  type_ref;
+
+using_refinement =
+  "using",
+  ["refinement"],
+  type_ref;
+
+using_alias =
+  "using",
+  ["alias"],
+  decl,
+  ("=", "to"),
+  ref;
+----
+
+If a `using` directive contains `=` or `to`, it is then implicitly treated as `using alias`.
+Otherwise, the kind of `using` is inferred from the referenced identifier.
+An explicit `namespace`, `reference` or `alias` clause may be present to enforce the kind of `using`.
+
+For a `using` directive, the scope is limited to the containing source file.
+
+====
+.Using a namespace
+```nx
+namespace Foo
+  let bar = 42
+end
+
+using Foo # `using namespace` is inferred
+bar = 43  # OK
+```
+
+.Explicit `using` kind
+```nx
+namespace Foo
+end
+
+using namespace Foo # OK
+# using refinement Foo # Panic!
+```
+
+.Using an alias
+```nx
+namespace Foo
+  let bar = 42
+end
+
+using Baz = Foo # `using alias` inferred
+
+Baz.bar = 43 # OK
+Foo.bar = 44 # Still OK
+# bar = 45   # Panic! `bar` is not declared in current scope
+```
+====

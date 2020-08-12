@@ -1,0 +1,63 @@
+= Arguments
+
+Onyx has shared semantics for arguments declarations and passing in different contexts.
+
+== Argument declaration
+
+[source, ebnf]
+--
+(* Lambdas can have closures. *)
+lambda_block_proto =
+  "|",
+  [closure_decl],
+  [type_expr],
+  [type_rest],
+  "|";
+
+(* Coroutine blocks don't have closures. *)
+coro_block_proto =
+  "|",
+
+  (*
+    Optional coroutine block arguments.
+    If arity is 1, parentheses are optional.
+    Otherwise, parentheses are required.
+    Arguments can not be coroutines themselves.
+  *)
+  [
+    (type_expr | type_rest | lambda_rest) |
+
+    ("(",
+      (type_expr | type_rest | lambda_rest),
+      {",", (type_expr | type_rest | lambda_rest)}, [","],
+    ")")
+  ],
+
+  (* Optional coroutine block return restriction *)
+  [type_rest | lambda_rest],
+
+  "|";
+
+(* Blocks are fuzzy-restricted by default, i.e. `~>` == `~ ~>`. *)
+lambda_rest = [":" | "~"], "~>", [lambda_block_proto];
+coro_rest = [":" | "~"], "=>", [coro_block_proto];
+
+type_rest = (":" | "~"), type_expr;
+
+(* Either is required *)
+decl_arg_decl =
+  [id | "[]"],
+  [rest | lambda_rest | coro_rest];
+--
+
+== Argument passing
+
+TODO: `bind(.(0, 0, 0, 0))` and `bind(.zero())`; it expands to `T.(0, 0, 0, 0)` and `T.zero()`.
+
+TODO:
+
+```nx
+def foo : T
+  return .(arg) # Same as `return T.(arg)`
+end
+```

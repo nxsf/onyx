@@ -1,0 +1,177 @@
+= Pointers
+:icons: font
+
+`~ T*lr` would match both on writeable and non-writeable, requiring readable.
+`~ T*lW` would match both on readable and non-readable, requiring non-writeable.
+`: T*lr` would match both on writeable and non-writeable, requiring readable.
+Applicable to references as well.
+
+.Object storages
+[cols="1,3*^"]
+|===
+| Storage | Shortcut | Deref | Return
+
+| Undefined
+| `T*u`
+| U
+| S
+
+| Static
+| `T*s`
+| F
+| S
+
+| Caller
+| `T*c`
+| F
+| S
+
+| Local
+| `T*l`
+| S
+| U
+
+| Instance
+| `T*i`
+| F
+| S <1>
+
+| Temporal
+| `T*t`
+| F <2>
+| S
+|===
+
+<1> Can only be used in and returned from object methods.
+Automatically casts to the called object's storage.
+Instance variables can also have this storage (e.g. `let last_used : T*ir`).
+
+<2> Assigning a temporal pointer to a variable is unsafe.
+
+.Casting between storages
+[cols=7*^, options="header"]
+|===
+| From
+| To `T*u`
+| To `T*s`
+| To `T*i`
+| To `T*c`
+| To `T*l`
+| To `T*t`
+
+| `T*u`
+|
+| U
+| U
+| U
+| U
+| U
+
+| `T*s`
+| S
+|
+| S
+| S
+| F
+| S
+
+| `T*i`
+| S
+| U
+|
+| U
+| F
+| S
+
+| `T*c`
+| S
+| U
+| U
+|
+| F
+| S
+
+| `T*l`
+| S
+| U
+| U
+| U
+|
+| U
+
+| `T*t`
+| S
+| U
+| U
+| U
+| U
+|
+|===
+
+.Auto-casting storage upon passing as an argument
+[cols=7*^, options="header"]
+|===
+| From
+| To `T*u`
+| To `T*s`
+| To `T*i`
+| To `T*c`
+| To `T*l`
+| To `T*t`
+
+| `T*u`
+| ✓
+| ✗
+|
+| ✗
+| ✗
+|
+
+| `T*s`
+| ✓
+| ✓
+|
+| ✓
+| ✓
+|
+
+| `T*i`
+| ✓
+| ✗
+|
+| ✓
+| ✓
+|
+
+| `T*c`
+| ✓
+| ✗
+|
+| ✓
+| ✓
+|
+
+| `T*l`
+| ✓
+| ✗
+|
+| ✓
+| ✓
+|
+
+| `T*t`
+|
+|
+|
+|
+|
+|
+|===
+
+1. Upon leaving object's scope, instance pointer is automatically cast.
+An argument can not be an instance pointer, because we don't know how to bind it to a particular instance.
+If passing an instance pointer, it turns into caller.
+If returning an instance pointer, depends on the called object's storage.
+
+2. Can not pass a temporal pointer.
+An argument can not be temporal pointer.

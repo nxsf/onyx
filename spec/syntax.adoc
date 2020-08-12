@@ -1,0 +1,41 @@
+== Syntax
+
+This specification uses https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form[EBNF] for language and other syntax definition, unless mentioned another.
+
+TIP: The entire compiled syntax can be found in xref:_compiled_syntax[].
+
+// TODO: Need more specification, maybe add syntax for this.
+The specification extends EBNF with variables: a nonterminal may have a list of arguments prefixed with `$` with optional default values, wrapped in parentheses.
+Once referenced within the nonterminal production rule, an argument is immediately replaced with its value.
+Recursion and nested variables are allowed.
+A nonterminal with arguments must always be used with parentheses, even if there are no actual arguments.
+
+.Using variables in EBNF syntax
+====
+[source,ebnf]
+----
+foo($arg = "none") = "bar" | $arg;
+
+a = foo();      (* Expands to `"bar" | "none";`)
+b = foo("qux"); (* Expands to `"bar" | "qux";` *)
+c = foo(b);     (* Expands to `"bar" | "bar" | "qux";` *)
+----
+====
+
+.Fundamental syntax
+[syntax]
+----
+binary = "0" | "1";
+octal = binary | "2" | "3" | "4" | "5" | "6" | "7" | "8";
+digit = octal | "8" | "9";
+
+(* Design rationale: hexadecimals are in upper-case to clearly
+  distingusigh them from exponents and prefixes (`Q` and `D`
+  are exceptions). Multiplier prefixes can not be used in
+  hexadecimal literals, so they don't mix. *)
+hex = digit | "A" | "B" | "C" | "D" | "E" | "F";
+
+(* Any Unicode abstract character, including
+  those consisting of multiple codepoints. *)
+unicode = (? A Unicode character ?);
+----

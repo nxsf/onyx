@@ -1,0 +1,11 @@
+@describe "Rational" => do
+  @describe "::Overflow" => do
+    @it => do
+      try
+        final _ = Int16::MAX + 1
+        fail("Rational::Overflow expected")
+      catch |e : Rational::Overflow| # OK
+      end
+    end
+  end
+end

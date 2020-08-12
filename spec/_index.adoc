@@ -1,0 +1,67 @@
+= The Onyx programming language
+:doctype: book
+// :blocknumsign: :
+:sectnums:
+:sectlinks:
+:toc: left
+:toclevels: 3
+:icons: font
+//:source-highlighter: pygments
+:linkcss:
+:stylesdir: stylesheets/
+:stylesheet: style.css
+:xrefstyle: full
+:listing-caption: Listing
+:stem:
+Vladislav Dvachevskii <vlad@dvachevskii.com>; NXSF Onyx Standard Committee <onyx@nsxf.org>
+v0.1.0, June 20, 2020
+
+include::foreword.adoc[]
+
+include::introduction.adoc[]
+
+include::scope.adoc[leveloffset=+1]
+
+include::normative_references.adoc[leveloffset=+1]
+
+include::terms_and_definitions.adoc[leveloffset=+1]
+
+include::symbols_and_abbreviated_terms.adoc[leveloffset=+1]
+
+include::conventions.adoc[]
+
+include::design.adoc[]
+
+include::syntax.adoc[]
+
+include::variables.adoc[leveloffset=+1]
+
+include::functions.adoc[]
+
+include::safety.adoc[]
+
+include::types.adoc[leveloffset=+1]
+
+include::structs.adoc[leveloffset=+1]
+
+include::traits.adoc[leveloffset=+1]
+
+include::core.adoc[]
+
+include::directives.adoc[]
+
+include::literals.adoc[leveloffset=+1]
+
+include::interoperability.adoc[]
+
+include::compiled_syntax.adoc[leveloffset=-1]
+
+include::optimization.adoc[leveloffset=-1]
+
+include::nxapi.adoc[]
+
+include::core-api.adoc[]
+
+include::macros-api.adoc[leveloffset=-1]
+
+include::glossary.adoc[leveloffset=-1]

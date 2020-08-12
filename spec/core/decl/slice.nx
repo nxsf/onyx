@@ -1,0 +1,32 @@
+# Slice maintains a bit-list of defined elements.
+#
+# ```
+# let s = mut Slice<SInt8, 5>()
+#
+# assert(@bitsizeof(s) == 45) # 5 * 8 + 5
+# assert(@sizeof(s) == 6) # (45f / 8).ceil.to_z
+# assert(s.size != s<Size>)
+#
+# assert(s.size == 0)
+# # s[0] # Would throw, because no element is defined yet
+# assert(s[0] = 42 == 42)
+# assert(s.size == 1)
+# assert(s.remove(0) == 42)
+# # s[0] # Would throw again
+# ```
+decl primitive Slice<Type: T, Size: S : @{Size}>
+  # Would throw if element is not defined.
+  decl mut? get(index: Size): T&i(w: \mut?) throws SizeError
+  alias [] to get
+
+  # Define or rewrite an element at *index*.
+  decl mut set(index: Size, value: T): T&iw throws SizeError
+  alias []= to set
+
+  # Un-define an element at *index*.
+  # Further `get` calls would throw.
+  decl mut remove(index: Size): T throws SizeError
+
+  # Return an actual size.
+  decl size: Size
+end

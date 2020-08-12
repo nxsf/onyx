@@ -1,0 +1,46 @@
+require "./fractional.nx"
+
+# An IEEE-754 floating-point number.
+decl primitive Float<
+  Base: ~%Natural,
+  Precision: ~%Natural,
+  EMax: ~%Natural>
+  derive Fractional;
+end
+
+alias FBin<
+  SignificandBits: ~%Natural,
+  ExponentBits: ~%Natural
+> = Float<
+  2,
+  Precision: SignificandBits,
+  EMax: \{{ nx.util.natural(2 ^ (nx.ctx.ExponentBits - 1) - 1) }}
+>
+
+alias FBin16 = FBin<11, 5> # Not basic, but often implemented
+alias FBin32 = FBin<24, 8>
+alias FBin64 = FBin<53, 11>
+alias FBin128 = FBin<113, 15>
+
+alias FDec<
+  Digits: ~%Natural,
+  ExponentBits: ~%Natural
+> = Float<
+  10,
+  Precision: Digits,
+  EMax: \{{ nx.util.natural(3 * 2 ^ (nx.ctx.ExponentBits - 2) / 2) }}
+>
+
+alias FDec32 = FDec<7, 8> # Not basic, but often implemented
+alias FDec64 = FDec<16, 10>
+alias FDec128 = FDec<34, 14>
+
+# It is only implemented for targets supporting the extended
+# double-precision floating-point number format natively.
+decl type FBin64E;
+
+# The [Brain floating-point number format][1]
+# is ubiquitous in AI computing.
+#
+# [1]: https://en.wikipedia.org/wiki/Bfloat16_floating-point_format.
+alias BFloat16 = FBin<8, 8>

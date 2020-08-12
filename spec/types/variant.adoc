@@ -1,0 +1,6 @@
+= Variant
+
+stem:[text(Variant<)[text(T)+]+ text(>) ~~ text(U) iff AA text(T) ~~ text(U)].
+
+TODO: Variant of enums has no guarantees about its size.
+However, when returned from exported function or taken pointer of, a enum value becomes exactly of what's defined.

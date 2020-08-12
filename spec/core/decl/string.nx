@@ -1,0 +1,141 @@
+decl primitive String<Encoding: E, Size: S : @{Size}>
+  # Access character at *index*. Depending on the encoding,
+  # the operation has different complexity.
+  # For example, `UTF8` has O(N), while `UCS2` has O(1).
+  decl [](index: Size) : Char<E>
+end
+
+trait Char::Encoding<
+  # A size in bits of a single code unit.
+  UnitSize: UZ : @{Size},
+
+  # How many code units are at most
+  # required to encode a code point.
+  PointSize: PZ : @{Size}
+>
+  enum Error
+    val Encoding
+  end
+
+  # Re-encode *char* in this encoding.
+  #
+  # ```
+  # UCS2.encode('a'ascii_) == 'a'ucs2
+  # ```
+  decl encode(char: Char<E>): Char<this> throws Error forall E
+
+  # A literal initialize macro for this encoding.
+  #
+  # The macro is called implicitly for each char or string literal.
+  #
+  # The restriction argument is set in accordance to
+  # the autocasting rules. A macro implementation is expected
+  # to accept at least `Char<this>` and `Int` restrictions.
+  #
+  # By default, char and string literals have `UTF16` encoding.
+  # Otherwise, the encoding type is calculated by upcasing
+  # the literal prefix. A prefix can not contain underscores,
+  # thus an encoding type name should not as well.
+  #
+  # This macro is likely to be implemented natively for built-in
+  # encodings. Custom encodings, however, are expected to implement
+  # it in user-code if literal suffix availability is desired.
+  #
+
+  decl macro @(literal ~ @{Char}, restriction :: Char<this> || Int)
+end
+
+# Represents a single codepoint in given `Encoding`.
+# A char's size in bits equals to the encoding's
+# codeunit size times codepoint size.
+#
+# ```
+# assert(@sizeof('f'ascii_) == 1)
+# assert(@sizeof('f'utf8) == 4)
+# assert(@sizeof('f') == 2) # UCS2 by default
+# ```
+primitive Char<Encoding: E ~ Encoding>
+  # Initialize from an explicit
+  # integral codepoint value.
+  #
+  # ```
+  # 'f'   # Calls `.initialize(literal)`
+  # '\66' # Calls THIS initializer
+  # ```
+  decl initialize(codepoint~ Int);
+
+  # Initialize from a character literal.
+  #
+  # ```
+  # 'f'   # Calls THIS initializer
+  # '\66' # Calls `.initialize(codepoint)`
+  # ```
+  #
+  # An example implementation:
+  #
+  # ```
+  # reopen Char<Windows::CP1251>
+  #   @[Inline]
+  #   impl initialize(literal ~~ L) forall L ~ @{Char}
+  #     # Within macros, text values are normalized to Unicode.
+  #     \{% if L.value == 'ф' then %}
+  #       return self(0xF4)
+  # ```
+  decl initialize(literal~~ @{Char});
+
+  # ```
+  # final a = 'a'ascii_
+  #
+  # assert(a.to_utf16 == a to Char<UTF16> ==
+  #   a.to(Char<UTF16>) == 'a'utf16)
+  # ```
+  decl to(:: C) : C forall C ~ Char
+
+  # Compare to a character with the same encoding.
+  decl equals?(: self<E>): Bool
+  alias eq?, == to equals?
+end
+
+%utf8["Привет!\0"] : Char<UTF8>[10] # 40 bytes = 320 bits
+%<"Ditto"> : Char<UCS2>[5] # 10 bytes = 80 bits
+"Привет"utf8u8 # ?
+
+# String and char literals can have encoding prefix and kind suffixes.
+"foo" : Array<Char<UTF16>, 3>
+"foo"u8 : Array<UInt8, 3> # Only if allowed to do so
+# "фу"u8 # Panic!
+"фу"utf8u8 : Array<UInt8, 4> # UTF-8 code units take one byte
+"фу"utf8 : Array<Char<UTF8>, 4>
+
+"Hello world" : Array<Char<UTF16>, 11>
+# Char<ASCII>[12]* can be cast to $char*
+# Char<UTF8>[]* as well.
+# Any char with encoding unit size == 1 can be?
+unsafe! $puts(&"Hello world\0"ascii_) # Address of a passed rvalue
+
+"Привет!\0"utf8
+"Привет!\0" # 16 bytes (UCS-2)
+
+module ASCII   < Char::Encoding<8, 1>;
+module UCS2    < Char::Encoding<16, 1>;
+module UCS4    < Char::Encoding<32, 1>;
+module UTF8    < Char::Encoding<8, 4>;
+module UTF16   < Char::Encoding<16, 2>;
+module UTF32   < Char::Encoding<32, 1>;
+module UTF16LE < Char::Encoding<16, 2>;
+module UTF32LE < Char::Encoding<32, 1>;
+module UTF16BE < Char::Encoding<16, 2>;
+module UTF32BE < Char::Encoding<32, 1>;
+
+decl primitive Codeunit<Encoding>;
+decl primitive Codepoint<Encoding>;
+
+'f' : CPoint<UCS2> # 2 bytes
+"f" : Array<CUnit<UCS2>, 1> # 2 bytes
+'f'utf8 : CPoint<UTF8> # 4 bytes
+"f"utf8 : Array<CUnit<UTF8>, 1> # 1 byte
+
+'ф'.cunits : Stack<CPoint<UCS2>, 1>
+'ф'.cunits.each => Std.print(&.to_u16) # 1 time
+"ф".each => Std.print(&) # 1 time
+"ф"utf8.each => Std.print(&) # 2 times

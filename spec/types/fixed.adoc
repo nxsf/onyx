@@ -1,0 +1,156 @@
+= Fixed-point numbers
+:stem:
+
+[quote]
+--
+[%noindex]
+In computing, a fixed-point number representation is a real data type for a number that has a fixed number of digits after (and sometimes also before) the radix point (after the decimal point '.' in English decimal notation).
+--
+
+A fixed-point number is defined by its natural base stem:[b] (either binary or decimal), natural integral part size stem:[i] (in the base), and integer fractional part size stem:[f] (in the base).
+For example, the number stem:[-3.625] may be encoded exactly as `-0b11.101Q8f4 : XBin<Integral: 3, Fractional: 4>`.
+
+stem:[f <= 0 => i > 0].
+
+A fixed-point number is always signed.
+
+A negative value of stem:[f] implies absence of the fractional part in the fixed-point number, and a power in the number's base equal to the absolute value of stem:[f] is applied to the fixed-point number value.
+A negative stem:[f] does not contribute to the resulting bitsize of a fixed-point number.
+For example, `-25kD5f-3 : XDec<Integral: 2, Fractional: -3>` is read as stem:[-25 xx 10^3], but internally comprised of only two digits `25` and a sign bit, thus occupying exactly 8 bits.
+
+An implementation is required to implement an arbitrary-sized fixed-point number in any of the defined bases with a reazonable maximum bitsize limit.
+
+.Fixed Core API
+[source, nx]
+----
+include::../core/decl/fixed.nx[]
+----
+
+== Binary fixed-point number encoding
+
+In a binary fixed-point number, stem:[f] defines the amount of bits the represented value is shifted **left** by.
+If stem:[f < 0], then the value is shifted **right** instead.
+
+.Binary fixed-point numbers
+====
+```nx
+@[Entry]
+export void main() {
+  let q = 96Q8f-4 : XBin<Integer: 7, Fraction: -4>
+
+  assert(q == 0b00000110 << 4)
+  assert(q == 0b01100000)
+  assert(q == 96)
+}
+```
+====
+
+== Decimal fixed-point number encoding
+
+stem:[{(f >= 0 => a = i + f), (f < 0 => a = i):}], where stem:[a] is the total amount of digits in a decimal fixed-point number.
+
+Digits in a decimal fixed-point number are encoded using the https://en.wikipedia.org/wiki/Densely_packed_decimal[Densely Packed Decimal encoding].
+An additional bit is occupied by the sign.
+
+.Decimal fixed-point number encoding scheme
+[bytefield, ./img/fixed-point-decimal-encoding, svg]
+--
+(def boxes-per-row 8)
+(def row-labels ["0", "1", "2", "3", "4", "5", "6", "7", "8"])
+(draw-column-headers)
+(draw-box "Sign" [:box-first])
+(draw-gap "DPD" [:box-related])
+(draw-bottom)
+--
+
+====
+[%noindex]
+Given `17.42Q4f2 : XDec<2, 2>`, `0` is for sign, and `1742` is `1001 1000 0011 00` in DPD encoding.
+
+[bytefield, ./img/fixed-point-decimal-encoding-example, svg]
+--
+(def boxes-per-row 15)
+(def left-margin 0)
+(draw-column-headers {:labels (map str (range 15))})
+(draw-box (text "0" :hex))
+(draw-box (text "1" :hex) [:box-first])
+(draw-box (text "0" :hex) [:box-related])
+(draw-box (text "1" :hex) [:box-related])
+(draw-box (text "0" :hex) [:box-related])
+(draw-box (text "0" :hex) [:box-related])
+(draw-box (text "1" :hex) [:box-related])
+(draw-box (text "0" :hex) [:box-related])
+(draw-box (text "1" :hex) [:box-related])
+(draw-box (text "1" :hex) [:box-related])
+(draw-box (text "0" :hex) [:box-related])
+(draw-box (text "1" :hex) [:box-related])
+(draw-box (text "1" :hex) [:box-related])
+(draw-box (text "1" :hex) [:box-related])
+(draw-box (text "0" :hex) [:box-last])
+(draw-bottom)
+--
+====
+
+[TIP]
+====
+[%noindex]
+The following table compiles sizes required for the first ten digits in a decimal fixed-point number.
+
+[cols=4, options="header"]
+|===
+| # of digits
+| DPD bitsize
+| Resulting bitsize
+| Required bytes
+
+| 1
+| 4
+| 5
+| 1
+
+| 2
+| 7
+| 8
+| 1
+
+| 3
+| 10
+| 11
+| 2
+
+| 4
+| 14
+| 15
+| 2
+
+| 5
+| 17
+| 18
+| 3
+
+| 6
+| 20
+| 21
+| 3
+
+| 7
+| 24
+| 25
+| 4
+
+| 8
+| 27
+| 28
+| 4
+
+| 9
+| 30
+| 31
+| 4
+
+| 10
+| 34
+| 35
+| 5
+|===
+====

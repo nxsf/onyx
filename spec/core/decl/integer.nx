@@ -1,0 +1,6 @@
+require "./real.nx"
+
+# A whole number.
+trait Integer
+  derive Real;
+end

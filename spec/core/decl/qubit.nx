@@ -1,0 +1,52 @@
+namespace Quantum
+  primitive Bit
+    # Set the qubit to a superposition,
+    # i.e. apply the Hadamard gate.
+    #
+    # ```
+    # let q = QBit()
+    # q.unset()
+    # q.get() # Returns either 0 or 1
+    # ```
+    decl mut unset()
+
+    # Flip the qubit state,
+    # i.e. apply the Pauli-X gate.
+    #
+    # ```
+    # let q = QBit()
+    # q = 1
+    # assert(~q == 0)
+    # ```
+    decl mut flip()
+    alias ~ to flip
+
+    # Set the qubit state.
+    #
+    # ```
+    # let q = QBit()
+    # q = 1
+    # assert(q == 1)
+    # ```
+    #
+    # NOTE: Change the underlying variable value with `q := QBit()`.
+    decl mut set(state : ::Bit)
+    alias = to set
+
+    # Measure the qubit value.
+    # Returns a binary bit: either 0 or 1.
+    #
+    # #!see(set)
+    decl get() : ::Bit
+
+    # Measure the qubit value and compare it with another qubit's.
+    decl equals?(qubit : self) : Bool
+
+    # Measure the qubit value and compare it with another value.
+    decl equals?(value : ::Bit) : Bool
+
+    alias eq?, == to equals?
+  end
+end
+
+alias QBit, Qubit to Quantum::Bit

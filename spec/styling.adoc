@@ -1,0 +1,24 @@
+= Styling
+
+This section is dedicated to styling guidelines for the specification.
+
+During the development of the specification, the following goals shall be followed, in the descending order of importance:
+
+1. Unambiguity:
+* Prefer duplication over complexity where needed;
+1. Lower mental overhead:
+* Prefer long forms over shortcuts, e.g. _has not_ is better than _hasn't_;
+* *Emphasize* where accent is needed;
+
+When mentioning a thesis, if it is under the same or lower heading level, then it is not required to link to its origin or explain.
+However, if the distance between mentioning and origin is subjectively big, then it is okay to link to the origin.
+
+Prefer *emphasizing* over SCREAMING CASE.
+
+== List styling
+
+A non-last item of a list shall be soft-terminated with `;`.
+
+The last item of a list shall be hard-terminated, e.g. with `.`.
+
+If a list item is opening a new list, it then shall end with a `:`.

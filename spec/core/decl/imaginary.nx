@@ -1,0 +1,49 @@
+require "./real.nx"
+
+# ```
+# final i = 5j
+# assert(i :? Imaginary<SInt32>)
+# assert(i ** 2 == -25)
+# ```
+@[LiteralSuffix(/j/)]
+decl primitive Imaginary<Type: T ~ Real>
+  derive Numeric;
+
+  decl initialize(~ T)
+
+  # # Cast a `Real` literal into an `Imaginary` literal.
+  # @[LiteralSuffix(/j/)]
+  # static decl (~ %(Real)) : %(Imaginary)
+
+  # Coerce to the same or higher bits.
+  # Would call `as` on the underlying value.
+  #
+  # ```
+  # 1uj.as_u64j : Imaginary<UInt64>
+  # # 1uj.as_u16j # Panic!
+  #
+  # 1ij.as_i32 : SInt32
+  # # 1ij.as_i16 # Panic!
+  # ```
+  @[MayPanic("If data loss is possible")]
+  decl nothrow as(~ (\Imaginary | \Real))
+
+  # Coerce to other (including lower) bits, allowing data loss.
+  # Would call `as!` on the underlying value.
+  #
+  # ```
+  # 1uj.as_u16j! : Imaginary<UInt16>
+  # 1j.as_i16! : SInt16
+  # ```
+  decl nothrow as!(~ (\Imaginary | \Real))
+
+  {% for t, _ in ipairs{"float", "double", "long double"} do %}
+    # Convert to the same or higher-bits complex floating C type.
+    @[MayPanic("If data loss is possible")]
+    decl nothrow as(: $`{{ t }} _Complex`)
+
+    # Convert to another (including lower-) bits
+    # complex floating C type, allowing data loss.
+    decl nothrow as!(: $`{{ t }} _Complex`)
+  {% end %}
+end

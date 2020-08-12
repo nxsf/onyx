@@ -1,0 +1,5 @@
+require "./numeric.nx"
+
+trait Core::Hypercomplex<Type: T ~ Real>
+  derive Numeric;
+end

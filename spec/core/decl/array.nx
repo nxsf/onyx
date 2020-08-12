@@ -1,0 +1,8 @@
+require "./aggregate.nx"
+
+decl primitive Core::Array<Type: T, Size ~ %z>
+  derive Core::Aggregate;
+
+  # Return a reference to an element at *index*.
+  decl def [](index: Size) : T&ir(w: \mut?) throws Core::SizeError
+end

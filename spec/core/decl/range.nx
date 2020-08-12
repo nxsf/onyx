@@ -1,0 +1,61 @@
+require "./scalar.nx"
+
+# TODO: IEEE-1788.
+
+# 0..3.each(1).to_a == [0, 1, 2, 3] # %R[0, 3], %Rf[0 3]
+# 0...3.each(1).to_a == [0, 1, 2]   # %R[0, 3), %Ri[0 3)
+# 0....3.each(1).to_a == [1, 2]     # %R(0, 3), %Ri32j(0 3)
+# Range<SInt32, false, true>(0, 3)  # %R(0, 3], %RQ8e-6(0 3]
+
+decl primitive Range<
+  Type: T ~ Numeric,
+  BoundLower: ~ %Boolean = true,
+  BoundUpper: ~ %Boolean = true
+>
+  derive Scalar;
+
+  decl ()(lower: T,upper: T) : self
+
+  decl .lower() : T
+  decl .upper() : T
+
+  decl lower=(self&w, T) : T
+  decl upper=(self&w, T) : T
+
+  decl .includes?(T) : Bool
+  alias ∋ to includes?
+
+  # Is self subset of another?
+  decl .sub?(self) : Bool
+  alias ⊆ to sub?
+
+  # Is self superset of another?
+  decl .super?(self) : Bool
+  alias ⊇ to super?
+
+  # Is self subset and not equals to another?
+  decl .strictsub?(self) : Bool
+  alias ⊊ to strictsub?
+
+  # Is self superset and not equals to another?
+  decl .strictsuper?(self) : Bool
+  alias ⊋ to strictsuper?
+end
+
+# let range = %R[1, 10]
+# range.lower = 0
+
+# trait Foo
+#   decl .foo()
+# end
+
+# struct Point
+#   let (.x, .y, .z) : FBin64
+#   let stat : SInt32 = 42
+
+#   def .double: self
+#     self(x * 2, y * 2)
+#   end
+# end
+
+# TODO: A reference (T&) does not neccessarily occupies any memory!

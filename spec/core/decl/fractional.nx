@@ -1,0 +1,6 @@
+require "./real.nx"
+
+# A fractional, i.e. non-whole, rational number.
+trait Fractional
+  derive Rational;
+end

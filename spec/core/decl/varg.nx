@@ -1,0 +1,41 @@
+# TODO: Do we need variadic arguments in the core?
+#
+# ```
+# export void simple_printf(const char* fmt, ...) {
+#   final varg = CVArg.init
+#
+#   # We assume that the pointer is always valid
+#   fmt = unsafe! fmt as! $char*cr
+#
+#   while (*fmt != '\0')
+#     if (*fmt == 'd')
+#       final i = unsafe! vargs.fetch($int)
+#       unsafe! $printf("%d\n", i)
+#     else if (*fmt == 'c')
+#       final c = unsafe! vargs.fetch($int)
+#       unsafe! printf("%c\n", c)
+#     else if (*fmt == 'f')
+#       final d = unsafe! vargs.fetch($double)
+#       printf("%f\n", d)
+#     end
+#
+#     fmt += 1
+#   end
+# }
+#
+# export int main() {
+#   unsafe! $simple_printf("dcff", 3, 'a', 1.999, 42.5)
+# }
+# ```
+virtual type CVArg
+  # Initialize a `CVArg` instance.
+  # Must panic if called from not within an exported function.
+  # Can be called at most once from a function; panic othwerwise.
+  virtual static def init : CVArg
+
+  # Unsafely interpret the next variadic argument as *type*.
+  virtual def unsafe fetch(type: :: T) forall T
+
+  # Shallow-copy a `CVArg` instance.
+  virtual def copy : CVArg
+end

@@ -1,0 +1,663 @@
+== Interoperability
+
+Onyx provides native means of interoperability with the https://en.wikipedia.org/wiki/C_(programming_language)[C programming language].
+
+TODO: An alternative would be to process C macro output, and if it's a constant, update it accordingly.
+So it's like `foo($SOME_MACRO)` => `foo($('a'))`.
+Panic if got a non-constant C expression.
+
+In this section, C terms may use [small]_smaller italic script_; C keywords and types may use [small]#`smaller monoscript`#.
+For example, Onyx struct is different from C [small]#_struct_#, and Onyx `const` is different from C [small]#`const`#.
+
+[[c-standard]]
+=== C standard
+
+Onyx supports xref:importing[] and xref:exporting[] a subset of C entities in accordance to https://www.iso.org/standard/74528.html[ISO/IEC 9899:2018] a.k.a. https://en.wikipedia.org/wiki/C18_(C_standard_revision)[C18]; herein _the C standard_.
+
+An Onyx compiler MUST be able to compile imported and exported C code.
+
+C features other than included in the C standard (e.g. a specific C compiler extension) are NOT required by the Onyx standard.
+
+[[importing]]
+=== Importing
+
+A C file may be imported using an `import` statement.
+
+.The import statement syntax
+[source, ebnf]
+----
+(*
+  The `import` statement shares syntax and semantics
+  with the `require statement`.
+
+  The following statements are equivalent:
+
+  ```
+  # NOTE: `.h` is implicitly appended only if
+  # a file missing its extension is not found
+  import "foo", "bar" from "baz"
+
+  import "foo.h", "bar.h" from "baz"
+  import "baz/foo.h", "baz/bar.h"
+
+  import "baz/foo.h"
+  import "baz/bar.h"
+  ```
+
+  As with `require`, the order of importing matters.
+*)
+import = "import", path, {",", path}, ["from", path];
+----
+
+The `import` statement shares syntax and semantics with the `require` statement with the following differences:
+
+  * Instead of compilation-defined _require_ paths it relies on _import_ paths, possibly specified by passing an `-I` flag.
+
+  * The default imported file extension is `.h` if missing.
+
+Akin to `require`, re-importing the same file at the same path multiple times is allowed, leading to an actual importing happening exactly once at the moment when the first `import` statement with the path is met.
+Files with the same contents, but at different paths, are treated as distinct imports.
+
+All xref:importing-variables[variable] declarations and definitions, xref:importing-functions[function] declarations and definitions, xref:importing-enums[[small]_enum_] definitions, xref:importing-unions[[small]_union_] declarations and definitions, xref:importing-structs[[small]_struct_] declarations and definitions, xref:importing-typedefs[[small]_typedef_] declarations with [small]_external linkage_ and xref:importing-macros[[small]_preprocessor text macros_] are imported from a C header into the Onyx scope.
+
+A C entity declared outside of an imported C header, but availaible from within it (e.g. via a nested [small]#`#include`# directive), is also imported.
+
+An imported entity exists in the top-level Onyx namespace.
+
+An imported entity can be referenced from the Onyx scope by prepending `$` to its identifier, e.g. `$int`.
+Akin to Onyx identifiers, wrapping backticks may be used to reference multi-word entities, e.g. `pass:[$`unsigned long`]`.
+
+The Macro API has means to access an imported entity information.
+
+[[c-type-mapping]]
+==== Type mapping
+
+All C [small]_fundamental types_ are interchangeable with Onyx types.
+
+Some C [small]_fundamental types_ may be target-dependent. For example, [small]#`int`# could map at least to `SInt16` or `SInt32` depending on the target data layout model.
+
+The following table defines mapping rules between C [small]_fundamental types_ and Onyx types.
+
+.Mapping between C and Onyx fundamental types
+[cols=2, options="header"]
+|===
+| C type
+| Onyx type
+
+| [small]#`void`#
+| `void : Void`
+
+| [small]#`char`#
+| TODO: Same as either [small]#`signed char`# or [small]#`unsigned char`#, depending on what?
+
+| [small]#`_Bool`#
+| TODO: `Bool : Bit` or target-dependent? How to determine exactly?
+
+| [small]#`signed char`#
+| `SInt8`
+
+| [small]#`unsigned char`#
+| `UInt8 : Byte`
+
+| [small]#`(signed) short (int)`#
+| At least 16 bits, usually `SInt16`
+
+| [small]#`unsigned short (int)`#
+| At least 16 bits, , usually `UInt16`
+
+| [small]#`(signed) (int)`#
+| At least 16 bits, usually `SInt16` or `SInt32`
+
+| [small]#`unsigned (int)`#
+| At least 16 bits, usually `SInt16` or `SInt32`
+
+| [small]#`(signed) long (int)`#
+| At least 32 bits, usually `SInt32` or `SInt64`
+
+| [small]#`unsigned long (int)`#
+| At least 32 bits, usually `UInt32` or `UInt64`
+
+| [small]#`(signed) long long (int)`#
+| At least 64 bits, usually `SInt64`
+
+| [small]#`unsigned long long (int)`#
+| At least 64 bits, usually `UInt64`
+
+| [small]#`float`#
+| `FBin32`
+
+| [small]#`double`#
+| `FBin64`
+
+| [small]#`long double`#
+| `FBin128` or target-dependent types, e.g. `X86::FBin80`
+
+| [small]#`float _Complex`# etc.
+| `Complex<$float>` etc.
+
+| [small]#`float _Imaginary`# etc.
+| `Imaginary<$float>` etc.
+
+| [small]#`_Atomic int`# etc.
+| `Atomic<$int>` etc.
+
+| [small]#`int b : N`#
+| `SInt<N>` or `UInt<N>` depending on implementation. TODO: How to make it consistent?
+
+| [small]#`signed (int) b : N`#
+| `SInt<N>`
+
+| [small]#`unsigned (int) b : N`#
+| `UInt<N>`
+
+| [small]#`_Bool b : 1`#
+| `UInt1 : Bool : Bit`
+
+| [small]#`type*`#
+| `$type*`
+
+|===
+
+[[importing-variables]]
+==== Importing variables
+
+All imported variables are available in the Onyx scope as static variables mapped in accordance to the xref:c-type-mapping[] scheme.
+
+An imported variable with [small]_const type qualifier_ is a final and immutable (if applicable) variable in Onyx.
+
+An imported variable with [small]_volatile type qualifier_ is a `volatile` variable in Onyx.
+
+The [small]_restrict type qualifier_ is ignored by Onyx.
+
+.Importing a variable
+====
+
+.variables.h
+```c
+int i;
+volatile const float j = 42;
+
+struct point_t {
+  int x, y;
+};
+
+struct point_t point;
+const struct point_t cpoint = { 10, 20 };
+
+char sa[] = "foo"; // The type is completed as `char[4]`
+char* sb = "bar";
+
+const char sc[] = "qux"; // The type is completed as `char[4]`
+const char* sd = "kax";
+```
+
+.main.nx
+```nx
+import "./variables.h"
+
+@[Entry]
+export void main () {
+  assert($i is? $int)
+  assert(&$i is? $int*srw)
+  assert($i == 0)
+
+  assert($j is? $float)
+  assert(&$j is? $float*sr)
+  assert($j == 42)
+  assert({{ nx.c.j.is_volatile }})
+
+  assert($point is? <mut $point_t>)
+  assert(&$point is? <mut $point_t>*srw)
+  assert($point.x += 1 == 1)
+
+  assert($cpoint is? <const $point_t>)
+  assert(&$cpoint is? $point_t*sr)
+  assert($cpoint.y == 20)
+
+  assert($sa is? <mut $char[4]>)
+  assert(&$sa is? <mut $char[4]>*srw)
+  assert($sa == %c[foo], $sa[2] == 'o')
+
+  assert($sb is? $char*srw)
+  # assert($sb == "bar") # There is no such a guarantee
+  assert((unsafe! $sb as String*sr)->eq?("bar"))
+
+  assert($sc is? <const $char[4]>)
+  assert(&$sc is? $char[4]*sr)
+
+  assert($sd is? $char*sr)
+}
+```
+
+====
+
+[[importing-functions]]
+==== Importing functions
+
+A function definition is compiled upon importing.
+
+Calling an imported function is always unsafe.
+
+An imported function argument can not be referenced by its name upon call.
+
+.Importing a function
+====
+
+.functions.h
+```c
+// A function declaration.
+int foo();
+
+// A function definition.
+int bar(int a, int b) {
+  return a + b;
+}
+```
+
+.main.nx
+```nx
+import "./functions.h"
+
+@[Entry]
+export void main () {
+  # It's a linker's responsiblity to
+  # ensure the symbol is actually defined
+  unsafe! foo()
+
+  # Calling an actual definition
+  assert((unsafe! $bar(1, 2)) == 3)
+}
+```
+
+====
+
+[[importing-enums]]
+==== Importing enums
+
+// tag::import-enum-as-macros[]
+[[import-enum-as-macros]]
+Importing a [small]_enum_ imports its values as [small]_macros_.
+// end::import-enum-as-macros[]
+
+// TODO: Are we sure about this?
+Imported [small]_enums_ can not be reopened.
+
+.Importing a enum
+====
+
+.enum.h
+```c
+enum color_t { RED, GREEN = 2, BLUE };
+```
+
+.main.nx
+```nx
+import "./enum.h"
+
+@[Entry]
+export void main () {
+  final color = $GREEN # Would evaluate to literal `2`, hence `$int`
+}
+```
+====
+
+[[importing-unions]]
+==== Importing unions
+
+An imported [small]_union_ may be initialized using the C [small]_struct initializer_.
+
+Accessing an imported [small]_union's_ member is always unsafe.
+
+// TODO: Are we sure about this?
+Imported [small]_unions_ can not be reopened.
+
+.Importing a union
+====
+
+.union.h
+```c
+union union_t {
+  int a;
+  double b;
+};
+```
+
+.main.nx
+```nx
+import "./union.h"
+
+@[Entry]
+export void main () {
+  final union = $union_t{ .a = 42 }
+  assert(unsafe! union.a == 42) catch return 1
+}
+```
+====
+
+[[importing-structs]]
+==== Importing structs
+
+An imported [small]_struct_ may be initialized using the C [small]_struct initializer_.
+
+Accessing a [small]_non-atomic_ member of a [small]_non-atomic_ imported [small]_struct_ is fragile.
+Accessing an [small]_atomic_ member of a [small]_non-atomic_ imported [small]_struct_ is threadsafe.
+Accessing a member of an [small]_atomic struct_ is unsafe.
+Accessing a member of a [small]_volatile struct_ is volatile.
+
+Mutability modifers are applicable to imported [small]_structs_.
+By default, an imported [small]_struct_ type is implicitly `const`.
+
+// TODO: Are we sure about this?
+Imported [small]_structs_ can not be reopened.
+
+.Importing a struct
+====
+
+.struct.h
+```c
+struct struct_t {
+  int a;
+  double b;
+};
+```
+
+.main.nx
+```nx
+import "./struct.h"
+
+@[Entry]
+export void main () {
+  final strukt = mut $struct_t{ .a = 42, .b = 0.5 }
+  assert((strukt.a += 1) == 43) catch return 1
+}
+```
+
+====
+
+[[importing-typedefs]]
+==== Importing typedefs
+
+Referencing an imported [small]_typedef_ is the same as referencing the type it [small]_aliases_.
+
+.Importing typedefs
+====
+
+.typedef.h
+```c
+typedef struct { double hi, lo; } range;
+```
+
+.main.nx
+```nx
+import "./typedef.h"
+
+@[Entry]
+export void main () {
+  final range = $range {
+    .hi = 0, .lo = 1 }
+}
+```
+
+====
+
+[[importing-macros]]
+==== Importing preprocessor macros
+
+// TODO: xcite:import-enum-as-macros[]
+
+An imported [small]_preprocessor text macro_ (hereby [small]_macro_) may be referenced from the Onyx scope as a regular C entity by prepending the `$` symbol to its identifier.
+
+An imported [small]_macro_ reference allows arguments to be passed to it.
+It is a error to use parentheses on an [small]_object-like macro_.
+
+Once referenced, a [small]_macro_ is immediately [small]_evaluated_ in accordance to the xref:c-standard[].
+The evaluation result is then embedded directly into the source code.
+
+Therefore, the concept of safety is not applicable to a [small]_macro_ reference itself.
+Instead, code generated by its evaluation is a subject to safety judgement.
+
+Imported [small]_macros_ are also available from the Macro API.
+
+.Importing macros
+====
+
+.macros.h
+```c
+#define FOO "foo"
+#define DOUBLE(arg) #arg * 2
+```
+
+.main.nx
+```nx
+import "./macros"
+
+@[Entry]
+export void main () {
+  assert($FOO == "foo")
+  assert($DOUBLE(2) == 4)
+}
+```
+
+====
+
+[[exporting]]
+=== Exporting
+
+A C declaration, definition, [small]_preprocessor directive_ or a block of C code may be exported using an `export` statement.
+
+An exported entity is available in the assembly code iff it has [small]_external linkage_.
+
+After a entity is exported, it is then treated in the same way as if it was xref:importing[imported] from a header.
+
+xref:exporting-functions[Exported functions] are compiled as soon as they're met by an Onyx compiler.
+
+Exported entities have their identifiers https://en.wikipedia.org/wiki/Name_mangling[unmangled].
+
+Exporting from within an Onyx namespace does not alter a entity's identifier in any way.
+
+An `export` statement contents may be preprocessed with Onyx macros.
+
+Onyx annotations are applicable to `export` statements.
+
+A non-block version of the `export` statement is terminated in accordance to the rules defined by the xref:c-standard[].
+For instance, a [small]_struct_ definition must be terminated with a semicolon, but a function definition does not have to.
+A [small]_preprocessor directive_ is terminated with a newline unless it (the newline) is preceded by a backslash.
+
+An exported block of code is enclosed in curly brackets and does not require a semicolon.
+
+// An `export` statement can not be contained within a function body.
+
+.The `export` statement syntax
+```ebnf
+c = (? Raw C code ?)
+
+c_var_decl = (? A C variable declaration ?);
+c_var_def = (? A C variable definition ?);
+c_struct_decl = (? A C struct declaration ?);
+c_struct_def = (? A C struct definition ?);
+c_union_decl = (? A C union declaration ?);
+c_union_def = (? A C union definition ?);
+c_enum = (? A C enumeration definition ?);
+c_typedef = (? A C typedef ?);
+c_directive = (? A C preprocessor directive ?);
+
+export = "export",
+  (* An export statement may accept a raw block of C code... *)
+  ("{", c, "}"),
+
+  (* or a single C declaration or definition... *)
+  c_var_decl |
+  c_var_def |
+  c_union_def |
+  c_struct_def |
+  c_union_decl |
+  c_struct_decl |
+  c_enum |
+  c_typedef |
+  c_directive |
+
+  (* or a function definition with C prototype, but Onyx body *)
+  nxc_function_def;
+```
+
+// TODO: Move to API section
+An Onyx compiler SHOULD provide a way to generate a C header file from source Onyx files, which MUST contain:
+
+  * Declarations of exported function definitions.
+
+  * Raw contents of any other `export` statement.
+
+  * Onyx comments xref:TODO:[related] to `export` statements, as inline C comments.
+
+[[exporting-functions]]
+==== Exporting functions
+
+Exported C function:: A function definition contained in a block of C code, i.e. in the block version of the `export` statement.
+
+An exported C function is written in C and compiled by an Onyx compiler.
+
+Exported Onyx function:: A function definition immediately following the `export` keyword.
+
+An exported Onyx function begins with a prototype written in C.
+The prototype ends with an opening curly bracket.
+
+An exported Onyx function body is written in Onyx.
+
+An exported Onyx function is terminated by a closing curly bracket matching the one the prototype ended with.
+
+An exported Onyx function body has fragile environment.
+
+TIP: Calling an exported Onyx function is always unsafe for consistency reasons.
+
+If an exported Onyx function is within an Onyx namespace, Onyx lookup rules are still applicable within its body.
+
+An exported Onyx function arguments are accessible within its body in accordance to the following table.
+
+.Exported Onyx function argument mapping
+[cols=2*, options="header"]
+|===
+^.^| C argument declaration
+^.^| Onyx argument declaration
+
+2+^| [small]#`T`# is scalar (i.e. [small]_number_ or [small]_union_)
+
+| [small]#`T arg`#
+| `let arg : T`
+
+| [small]#`const T arg`#
+| `final arg : T`
+
+| [small]#`T* arg`#
+| `let arg : T*urw`
+
+| [small]#`const T* arg`#
+| `final arg : T*ur`
+
+2+^| [small]#`T`# is aggregate (i.e. [small]_array_ or [small]_struct_)
+
+| [small]#`T arg`#
+| `let arg : mut T`
+
+| [small]#`const T arg`#
+| `final arg : const T`
+
+| [small]#`T* arg`#
+| `let arg : mut T*urw`
+
+| [small]#`const T* arg`#
+| `final arg : const T*ur`
+
+2+^| Other
+
+| [small]#`...`# ([small]_variadic function arguments_)
+| Accessible via `@varg` macro
+
+| [small]#`volatile T arg`#
+| `volatile let arg : T`
+
+| [small]#`restrict T arg`#
+| `let arg : T` (no effect)
+
+|===
+
+.The exported Onyx function syntax
+```ebnf
+c_proto = (? A C function prototype, e.g. `void main(void)` ?);
+nxc_function_def = c_proto, "{", {expr}, "}";
+```
+
+'''
+
+.Exporting
+====
+
+.main.nx
+```nx
+# This is an exported Onyx function.
+@[Entry] # An Onyx annotation!
+export void main() {
+  # Onyx body
+}
+
+# Has a non-external linkage
+export static _Alignas(8) const int i = 42;
+
+# This comment is not going to be exported
+# because it is not related to the statement
+
+export struct struct_t {
+  int a, b;
+};
+
+export #ifndef FOO
+export #define FOO 42, \
+                   43
+
+export #endif
+
+export {
+  // All C comments would be exported
+  // # Onyx comments aren't allowed here
+
+  _Atomic _Alignas(double) int j;
+
+  int k;
+
+#define OUTPUT(arg) puts ( #arg );
+
+  // This is an exported C function.
+  static void foo () {
+    // C code
+  }
+}
+```
+
+A possible variant of a generated C header:
+
+.main.h
+```c
+// This is an exported Onyx function.
+void main();
+static _Alignas(8) const int i = 42;
+struct struct_t {
+  int a, b;
+};
+#ifndef FOO
+#define FOO 42, \
+            43
+#endif
+  // All C comments would be exported
+  // # Onyx comments aren't allowed here
+  _Atomic _Alignas(double) int j;
+
+  int k;
+
+  #define OUTPUT(arg) puts ( #arg );
+
+  // This is an exported C function.
+  static void foo () {
+    // C code
+  }
+```
+
+====

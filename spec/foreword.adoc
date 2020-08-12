@@ -1,0 +1,21 @@
+[preface]
+= Foreword
+
+NXSF (the Onyx Software Foundation) is an international non-profit organization with a mission to develop the Onyx programming language and its ecosystem.
+More information on NXSF can be found at https://nxsf.org.
+
+This document is developed by the NXSF Onyx Standard Committee.
+Any feedback or questions on this document should be directed to the NXSF Onyx Standard Committee at onyx@nxsf.org.
+
+A entity willing to become a member of the NXSF Onyx Standard Committee or any other NXSF Committee to obtain voting rights on developing documents should consult to the information found at https://nxsf.org/membership.
+
+The procedures used to develop this document and those intended for its further maintenance are described in the NXSF Directives found at https://nxsf.org/directives.
+
+This document follows the https://semver.org/spec/v2.0.0.html[Semantic Versioning 2.0] scheme.
+Multiple major versions of this document may co-exist simultaneously, but every revision replaces previous minor and patch versions of this document.
+
+Attention is drawn to the possibility that some of the elements of this document may be the subject of patent rights.
+NXSF shall not be held responsible for identifying any or all such patent rights.
+Details of any patent rights identified during the development of the document will be in the Introduction and/or on the NXSF list of patent declarations received found at https://nxsf.org/patents.
+
+Any trade name used in this document is information given for the convenience of users and does not constitute an endorsement.

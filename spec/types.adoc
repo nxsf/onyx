@@ -1,0 +1,502 @@
+= Types
+
+A type is a fundamental qualia of a entity determining its characteristics.
+
+[info]
+--
+The definition of _type_ given by Wikipedia:
+
+[quote, Wikipedia contributors, 'https://en.wikipedia.org/wiki/Data_type[Data Type] at July 20, 2020']
+[...], a *data type* or simply *type* is an attribute of data which tells the compiler or interpreter how the programmer intends to use the data.
+
+is different from that used in this document.
+Instead, this document has the aforementioned specialized _data type_ definition, which aligns closely with the Wikipedia's.
+--
+
+A type is uniquely identified with a fully-qualified identifier.
+
+.Type kinds
+A type is either a _namespace_, _trait_, _unit_, _enum_, _struct_, _class_ or an _annotation_; this classification is known as the _type kind_.
+A type kind is a keyword.
+
+.Data types
+A _data type_ may have _instances_ of that type known as _objects_ which are deemed to physically exist in the space-time continuum, including stack memory, processing unit registers or sections within an executable file.
+info:[In practice, an object existence may be elided during translation for optimization purposes.
+Also, an object may be present in superposition, e.g. a quantum bit, which is not clearly a definition of existence.
+However, a human always considers an object existing somewhere and sometime.]
+Enum, struct and class types are considered data types.
+
+TODO: A struct type may be named or anonymous.
+Anonymous struct also allow method declarations with reopening.
+
+TODO: A class type has optional mutability.
+Read more in classes.
+
+TODO: Entity declaration, implementation and definition.
+// TODO: _actual implementation_ of a type, which may be altered if it's `incompl` or `specompl`.
+
+A namespace, trait or unit type shall not be declared, but defined only.
+info:[An implementation statement requires a prior declaration statement, therefore these types can not be implemented either.
+The design decision is driven by the fact that these types do not have runtime state to be finalized.
+The annotation type kind is not included in that list because it may actually be defined with hooks.]
+// TODO: Think about annotations.
+
+== Members
+
+A type contains zero or more _members_.
+A member may be a function, value, macro, or a type.
+This classification is known as _member kind_.
+
+[info]
+--
+Every type is a name-space in sense of that it can have members declared.
+--
+
+.Member reference syntax
+----
+value = "variable" | "constant"; (* TODO: Move away *)
+member_storage = "instance" | "static";
+member_kind = "function" | "value" | value | "macro" | "type";
+member = [member_storage], member_kind, "member";
+----
+
+Any type may contain type and macro members.
+
+.Member storage
+A function or value member has _storage_.
+The storage is either static or instance.
+A static member has lifetime aligned with the program execution.
+An instance member lifetime spans to the object's.
+In a data or trait type, the storage is instance by default, and can be altered with a storage modifier.
+Only struct and class types may contain instance value members.
+In a enum type, a value member declaration shall explicitly contain the static storage modifier.
+In a namespace, annotation, or a unit type, a member storage is always implicitly static and can not be altered.
+
+== Generic types
+
+A _generic type_ is a type containing at least one generic argument declaration.
+
+A generic argument is accessible from within the generic type scope.
+info:[A generic argument is not accessible from type members nested in the generic type.]
+// TODO: But you can do `reopen Foo<T>`, i.e. use the argument in a reopen, extend, derive statements.
+
+====
+```nx
+struct Foo<T>
+  struct Bar
+    let x : T # Panic! `T` is not declared in `Bar`
+
+  struct Bar<T>
+    let x : T # OK, but distinct from `Foo`'s `T`
+```
+====
+
+Upon identifier qualification, a generic argument has higher precedence over the outer scope.
+
+[info]
+--
+By convention, generic argument identifiers consist of the smallest reasonable number of uppercase Latin letters, e.g. `Array<T>` or `Encoding<BitSize: BZ, CodeunitSize: CZ>`.
+--
+
+A generic argument may be queried from a generic type using the `t::<name>` accessor, where `name` is the name (or alias, with higher precedence) of the argument.
+info:[Because of that, `<>` is in the list xref:TODO:[restricted names] for a user function declaration.]
+
+.Querying a generic argument
+====
+```nx
+decl struct Array<Type: T, Size: S>;
+@assert(Array<SInt32>::<Type> == SInt32)
+
+final ary = FBin64[3](1, 2, 3)
+@assert(ary::<Size> == 3)
+
+# Also works for variants!
+final var = Std@rand(%i[1 2 3], %f[1 2 3 4])
+# @assert(var::<Size> == 3) # Would work in 50% of cases
+```
+====
+
+// If a generic type's stem:[T] field's type restriction expression contains one of stem:[T]'s generic arguments stem:[A], then the generic argument stem:[A] is considered contributing into stem:[T]'s completeness.
+
+// .Generic arguments syntax
+// [syntax]
+// ----
+
+// ----
+
+// .Common types syntax
+// [syntax]
+// ----
+// (* A type visibility modifier can not be `protected`. *)
+// type_visibility_mod =
+//   (* !keyword *) "public" |
+//   (* !keyword *) "private";
+// ----
+
+== Type specialization
+
+// TODO: Need a better definition of when specialization happens.
+A _type specialization_ is the process of establishing a distinct type with a unique generic arguments combination from a type definition for the first time when a compiler determines that there is a possibility for either an object or a type instance of the type to exist in runtime.
+info:[Simply referencing a type, for example from within a `reopen` statement or restriction, does not trigger type specialization.
+For the specialization to be triggered, there shall be a possibility of that the type would actually exist in runtime as an object or type instance.]
+A non-generic type is considered to have zero generic arity, which is a unique combination; therefore a non-generic type specializes at most once.
+
+// TODO: Conveyed from a clause in the incompleteness section.
+// If the product of a type specialization is an incomplete type, then the specialization fails, causing panic.
+
+.Type specialization
+====
+```nx
+struct Foo<T>
+  val x : T
+  \{% print "Spec'd with " .. nx.scope.T:dump() %}
+end
+
+let f1 = Foo<SInt32>() # => Spec'd with SInt32
+let f2 = Foo<SInt32>() # => (already spec'd)
+let f3 = Foo<FBin64>() # => Spec'd with FBin64
+# let f4 = Foo<Real>() # Panic! Field `Foo:x : Real` has incomplete type
+
+decl bar(foo: Foo<FBin32>) # Do not specialize, it's just a reference
+
+let f5 = \Foo<FBin32> # => Spec'd with FBin32
+```
+====
+
+Type specialization is recursive; that is, if a type stem:[T] containing a field of type stem:[U] specializes, stem:[U] also specializes during stem:[T]'s specialization.
+
+A type specialization triggers specialization of each trait from its traits set, in the same order as in the set.
+
+[[spec-of-child-type-triggers-parent]]
+A specialization of a xref:_type_inheritance[child] type triggers specialization of its parent.
+
+// Type specialization is not to be confused with function specialization: the latter is triggered even on incomplete types.
+
+.Delayed macros
+ditto:[Delayed macro calls and blocks] written directly within a type declaration body are evaluated on every containing type specialization.
+ditto:[] within a trait type declaration are copied into every deriving non-trait type.
+
+.Delayed macro evaluation during specialization
+====
+```nx
+trait Container<Type: T>
+  \{%
+    -- This macro block would evaluate on every deriving type
+    -- specialization, unique per deriving type.
+    print "Spec'd"
+
+    -- Would only declare if `T` is of `Int`
+    if nx.scope.T.type < nx.lookup("Int") then
+  %}
+    # Return a sum of all of
+    # the container's elements.
+    decl sum() : T
+  \{% end %}
+end
+
+decl struct Array<Type: T, Size: S ~ %z>
+  derive Container<T>
+end
+
+decl struct List<Type: T>
+  derive Container<T>
+end
+
+final ary = Array<SInt32, 3>(1, 2, 3) # => Spec'd
+final list1 = List<SInt32>()          # => Spec'd
+final list2 = List<SInt32>()          # => (already spec'ed)
+```
+====
+
+// TODO: Reorder struct/class fields using a `reorder Strukt { a, b }` statement.
+
+== Type completeness
+
+A _complete type_ is a data type specialization with defined size of occupied space, or a unit type specialization.
+Only a complete type can be used as a value type in runtime.
+// info:[A value may be of an incomplete type in an incomplete type specialization, e.g. `Wrapper<SInt>`, with a field of generic type `T` becoming `SInt`; however, such a type shall not be used in runtime.]
+
+An _incomplete type_ is a namespace type, annotation type, or a data type specialization with undefined size.
+A data type specialization is deemed to be incomplete if it contains a field of an incomplete type.
+info:[A complete type may have an incomplete generic argument, e.g. `Pointer<SInt>`.
+What matters is the runtime representation of a data type; if a data type does not contain fields of incomplete types, it is complete.]
+info:[For Core primitives, there are rules for every primitive regarding on how to infer its completeness.]
+
+.Incompleteness modifier
+[proposal]
+--
+It may be possible to define structs, classes and enums with `incompl` modifier, which makes the type incomplete and disallows to use it in runtime unless reopened with `compl` modifier.
+The `compl` modifier is default for definitions and reopenings then.
+--
+
+// TODO: `@[PlaceBefore]` and `@[PlaceAfter]` annotations to ensure order of certain variables. `@[EnsureOrdered]` to prohibit reordering of a struct.
+
+// TODO: Undefined order by default, bordered by extension? Use `@[PreserveOrder]`.
+
+// TODO: May only extend from type implementations, not declarations. Because we must know the data layout in memory. But what about extending from declarations???
+
+// TODO: "can" means "implementation must ensure this possibility".
+
+== Type inheritance
+
+TODO: Classes can extend classes and structs; structs can extend structs only.
+
+TODO: Shall only extend a defined type, so we know its layout.
+
+== Reopening
+
+A type may be reopened using the `reopen` statement.
+
+`reopen Foo<T> forall T` is similar to `decl Foo<T>`.
+
+Can reopen Variants, Unions, anonymous structs, tuples, enums, primitives.
+
+.The `reopen` statement syntax
+[syntax]
+----
+(* TODO: Move. *)
+compl_mod =
+  (* !keyword(mod) *) "compl" |
+  (* !keyword(mod) *) "incompl";
+
+reopen_statement =
+  [compl_mod],
+
+  (* !keyword(statement) *)
+  "reopen",
+
+  type_ref,
+  ";" | block();
+----
+
+A `reopen` statement block semantics is similar to the declaration block semantics of the reopened type.
+
+It is not possible to implement fields within a reopen statement.
+
+It is a error to try reopening a non-existing type declaration.
+
+.Reopening a type
+====
+```nx
+decl struct Foo<T> forall T ~ Int
+  let x : T
+  \{% print "Specialized the " .. nx.scope.T:dump() %}
+end
+
+# reopen Foo<T: FBin64>; # Panic! `Foo<T>` istype
+reopen Foo<SInt32>;
+# => Specialized a SInt
+# => Specialized the SInt32
+```
+====
+
+Type expressions may also be reopened.
+info:[This gives a powerful and flexible mechanism for declaring members on trait sums, for example.]
+
+.Reopening type expressions
+====
+Given these traits and struct:
+
+```nx
+trait Drawable
+  decl draw(Canvas)
+end
+
+trait Colorized
+  decl color : UInt8
+  decl color=(UInt8)
+end
+
+struct Line
+  <~ Drawable, Colorized
+
+  let color : UInt8
+
+  # impl ~Drawable.draw
+  impl draw(canvas)
+    # Draw without considering the color
+  end
+end
+```
+
+One option would be to reopen the traits sum with another-named method declaration.
+
+```nx
+reopen (Drawable && Colorized)
+  decl draw_colorized(Canvas)
+end
+
+reopen struct Line
+  # impl ~(Drawable && Colorized).draw_colorized(canvas)
+  impl draw_colorized(canvas)
+    # Draw with color!
+  end
+end
+
+final line = Line()
+
+# W/ color
+line~(Drawable && Colorized).draw_colorized(canvas)
+line.draw_colorized(canvas)
+
+# W/o color
+line~Drawable.draw(canvas)
+line.draw(canvas)
+```
+
+Another option would be to reopen the sum with the same-named method declaration.
+But this would require solving the arising collision problem in the struct.
+
+```nx
+reopen (Drawable && Colorized)
+  decl draw(Canvas)
+end
+
+reopen struct Line
+  impl ~(Drawable && Colorized).draw(canvas) as draw_colorized
+    # Draw with color!
+  end
+end
+
+final line = Line()
+
+# W/ color
+line~(Drawable && Colorized).draw(canvas)
+line.draw_colorized(canvas)
+
+# W/o color
+line~(Drawable).draw(colorized)
+line.draw(canvas)
+```
+
+Reopening may also happen right within a type; it shall be then referenced with `self`.
+
+```nx
+reopen Drawable
+  reopen (self && Colorized)
+    # Draw colorized.
+    #
+    # NOTE: It's not a part of `Drawable`,
+    # but rather of `Drawable && Colorized`,
+    # hence no collision if deriving `Drawable` only.
+    decl draw(Canvas)
+  end
+end
+
+# The semantics is similar to the
+# second option mentioned above.
+line~(Drawable && Colorized).draw(canvas)
+```
+
+The in-type reopening comes in particularly useful when dealing with generic arguments and namespaced types.
+
+```nx
+trait Container::Indexable<K, V>
+  reopen (self && Enumerable<V>)
+    decl each(-> |(index: K, value: V)|)
+  end
+end
+
+# An alternative would be (quite wordy):
+#
+
+reopen (
+  Container::Indexable<K, V> &&
+  Container::Enumerable<V>
+) forall K, V
+  decl each(-> |(index: K, value: V)|)
+end
+```
+====
+
+== Refining
+
+TODO: `using refinement`.
+
+== Restriction
+
+Behavioural bias is applied whenever a compiler can prove it.
+In every scope, a type restriction invests into the bias.
+The bias is reduced outside of the context.
+The bias does not exist in runtime.
+
+.Behavioural bias
+====
+```nx
+# In this example, `Drawable` is root trait for both `Drawable2D` and
+# `Drawable3D`, causing name collision in a type deriving from both,
+# because if we bias `point` to `Drawable` and call `draw` on it,
+# which dimension-draw call would it be?
+#
+# A) Can not bias to `Drawable`, only `p~Drawable2D~Drawable`.
+
+# Abstract traits, which are not deriveable directly?
+indirect trait Drawable
+  decl draw
+end
+
+trait Drawable2D <~ Drawable
+end
+
+trait Drawable3D <~ Drawable
+end
+
+struct Point
+  derive Drawable2D
+    impl ~draw as draw2d
+  <~ Drawable3D
+
+  impl ~Drawable2D.draw as draw2d;
+  impl ~Drawable3D.draw as draw3d;
+
+  def do_pointy_stuff;
+end
+
+# The argument is required to derive from `Drawable2D`.
+# def draw2d(x : T) forall T ~ Drawable2D # Ditto (need e.g. for `sum`)
+# def draw2d(x : T) forall T where T <~ Drawable2D # Ditto, allows more complex expressions
+# TODO: Have formal algorithm for that.
+def draw2d(x ~ Drawable2D)
+  \{%
+    # `x` is biased to `Drawable2D` only
+    nx.assert(nx.scope.x.type.bias ==
+      nx.typexpr("Drawable2D"))
+  %}
+
+  x.draw() # OK, equivalent to `x~Drawable2D`
+end
+
+# An argument is required to derive from at
+# least one trait deriving from `Drawable`.
+def draw(x ~ Drawable)
+  \{%
+    # `x` is biased to `Drawable`
+    nx.assert(nx.scope.x.type.bias ==
+      nx.typexpr("Drawable"))
+  %}
+
+  # x.draw() # Panic! `~Drawable.draw()` is indirect declaration
+
+  if x ~? Drawable2D
+    # It may also derive from any other `Drawable`,
+    # but here we're biased to `Drawable2D` only
+    # an do not care about other possible traits.
+    #
+
+    \{%
+      # `x` is biased to `Drawable2D`
+      nx.assert(nx.scope.x.type.bias ==
+        nx.typexpr("Drawable2D"))
+    %}
+
+    x.draw() # OK, eq. to `x~Drawable2D.draw()`
+  end
+end
+```
+====
+
+include::./types/float.adoc[leveloffset=+1]
+
+include::./types/fixed.adoc[leveloffset=+1]
+
+include::./types/units.adoc[leveloffset=+1]

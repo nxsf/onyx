@@ -1,0 +1,55 @@
+= Units
+
+A unit type is an object, but it only exists in a single instance and does not occupy any memory in runtime.
+
+.Unit type declaration syntax
+[syntax]
+----
+(* A unit type declaration. *)
+unit =
+  type_visibility_mod,
+
+  (* !keyword(Unit type declaration) *)
+  "unit",
+
+  id,
+  [generic_args_decl],
+
+  ";" | block();
+----
+
+A unit type may derive from a trait.
+
+A unit type shall not extend any other types.
+
+Unit members do not have storage.
+Unit members may be accessed both in namespace- and object-access styleinfo:[, for example `Unit.foo()` is equivalent to `Unit::foo()`].
+
+[info]
+--
+Akin to instance members in an object, unit functions are also referenced as _(unit) methods_, and unit values -- as _(unit) fields_.
+--
+
+Within a unit method implementation, `this` is equivalent to `self`.
+
+TODO: An instance storage bound to a unit always expands to the static storage.
+
+A unit type is a functor with zero arity.
+A call to a unit type returns itself.
+
+.Unit types
+====
+```nx
+unit Foo
+  let x = 42
+
+  def get_x
+    return x
+  end
+end
+
+assert(Foo == Foo())
+assert(Foo.x == Foo::x)
+assert(Foo.get_x == Foo::get_x)
+```
+====

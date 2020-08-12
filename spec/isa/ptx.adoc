@@ -1,0 +1,12 @@
+= PTX
+
+== Reference storage
+
+`static final const` has `.global` state space by default.
+`static final mut` or `static let` have `.global` state  space by default.
+`local final` and `local let` have `.local` (or `.reg` if proved to be non-addressable) state space.
+
+Can alter explicitly with `@[PTX::Const]`, `@[PTX::Global]` etc., or `local inreg let x`.
+
+NOTE: If implementation does not have stack, taking address of a `.local` state-spaced reference returns a fixed address.
+A module reference may also have `.local` state space in such implementations.

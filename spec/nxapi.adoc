@@ -1,0 +1,617 @@
+[appendix]
+== NXAPI
+
+An Onyx compiler is able to generate documentation for exported functions only in form of C headers.
+C standard for header files is applied in such cases.
+
+For Onyx language APIs, the current standard is applied, named NXAPI.
+
+The NXAPI standard defines a schema to document entities declared in an Onyx program.
+The standard also provides standards for common interchange formats, including binary, JSON, DSON, YAML, XML and TOML.
+
+Herein "API" stays for Onyx language API if not mentioned another.
+
+API documentation is intended to provide the exact information as in the source file.
+Due to the inferring freedom of the Onyx language, it is often impossible to predetermine the conditions an API is going to be used in.
+
+For example, a `Foo` type mentioned from within an API function arguments list could possibly mean another type if the namespace containing the functions gets an type also named `Foo` in a program-consumer of the API.
+However, full path like `::Foo` is unambiguous and is considered a good practice.
+
+Similarly, while it is possible to infer a function return type in the scope of the API, it (the return type) may turn out to be different when the API is used in a consumer program.
+Therefore, library API authors are encouraged to provide concrete, unambiguous return types to their functions whenever possible.
+
+In fact, Onyx compilers are expected to have some kind of a strict compilation mode, which would require concrete typing everywhere. {paper-noindex}
+
+NXAPI schema includes documentation for namespaces, types, functions, annotations and macros.
+
+=== Schema
+
+NXAPI schema definition describes a set of available NXAPI nodes. {paper-excerpt=25,-1}
+
+<div class="toc" paper-noindex>
+
+  {{ paper-toc }}
+
+</div>
+
+=== Structure
+
+Each node in the schema definition has a `kind` value.
+This value is used to determine the kind of a node in an NXAPI document.
+
+In the schema definition, a node also has a set of `fields`, which defines the set of properties for the node.
+
+The schema definition uses the DSON format for simplicity.
+
+The implicit root object of a NXAPI document is the anonymous top-level namespace, therefore an NXAPI document is an array of the top-level namespace declarations.
+
+Consider the following example: {paper-noindex}
+
+```dson
+# That is an actual NXAPI document
+[
+  {
+    kind = namespace,    # Kind of this node is a namespace
+    path = "::Foo::Bar", # A `path` field with some value
+    declarations = []    # A `declaration` field with some values
+  }
+]
+```
+
+=== Nodes
+
+List of NXAPI nodes. {paper-excerpt=0,-1 paper-noindex}
+
+==== Special nodes
+
+There are some special nodes which can not be reasonably defined in the schema. {paper-excerpt=16,65 paper-noindex}
+
+A `decl` node is one of:
+
+  * [`namespace_decl`](#nxapi-namespace_decl){paper-link}; or
+  * [`struct_decl`](#nxapi-struct_decl){paper-link}; or
+  * [`var_decl`](#nxapi-var_decl){paper-link}; or
+  * [`function_decl`](#nxapi-function_decl){paper-link}; or
+  * [`annotation_decl`](#nxapi-annotation_decl){paper-link}; or
+  * [`macro_decl`](#nxapi-macro_decl){paper-link}.
+
+An `expr` node...
+
+==== `delayed_macro_expr`
+
+A delayed macro expression node could be used instead of any other node. {paper-excerpt=31}
+
+```dson
+{
+  kind = delayed_macro_expr,
+  fields = [{
+    name = expr,
+    type = string,
+    required = true
+  }]
+}
+```
+
+==== `namespace_decl`
+
+A namespace declaration node contains its name and declarations. {paper-excerpt=28}
+
+A namespace declaration can not be virtual.
+
+Namespace and type declarations must have fully resolved paths, e.g. `::Foo::Bar`. {#nxapi-namespace-full-path}
+
+```dson
+{
+  kind = namespace_decl,
+  fields = [{
+    name = doc,
+    type = string,
+    required = false
+  }, {
+    name = path,
+    type = string,
+    required = true
+  },{
+    name = declarations,
+    type = array<decl>,
+    required = true # May be empty
+  }]
+}
+```
+
+==== `var_decl`
+
+A variable declaration node may be virtual. {paper-excerpt=28}
+
+```dson
+{
+  kind = var_decl,
+  fields = [{
+    name = doc,
+    type = string,
+    required = false
+  }, {
+    name = virtual,
+    type = bool,
+    required = true
+  }, {
+    name = accessibility,
+    type = enum<let, get, set, final>,
+    required = true
+  }, {
+    name = storage,
+    type = enum<static, instance>,
+    required = undefined # Only applicable to struct variables
+  }, {
+    name = visibility,
+    type = enum<public, protected, private>,
+    required = false # Undefined if missing
+  }, {
+    name = name,
+    type = string,
+    required = true
+  }, {
+    name = restriction,
+    type = type_ref,
+    required = false
+  }, {
+    name = value,
+    type = expr,
+    required = false
+  }, {
+    name = annotations,
+    type = array<annotation_call>,
+    required = true # May be empty
+  }]
+}
+```
+
+==== `function_decl`
+
+A function declaration node may be virtual. {paper-excerpt=27}
+
+```dson
+{
+  kind = function_decl,
+  fields = [{
+    name = doc,
+    type = string,
+    required = false,
+  }, {
+    name = virtual,
+    type = bool,
+    required = true,
+  }, {
+    name = implementation,
+    type = enum<decl, impl, def, redef>,
+    required = true,
+  }, {
+    name = storage,
+    type = enum<static, instance>,
+    required = undefined # Only applicable to trait,
+                          # struct and enum functions
+  }, {
+    name = mutability,
+    type = enum<mut, const>,
+    required = false # Undefined if missing
+  }, {
+    name = visibility,
+    type = enum<public, protected, private>,
+    required = false # Undefined if missing
+  }, {
+    name = name,
+    type = string,
+    required = true
+  }, {
+    name = arguments,
+    type = array<arg_decl>,
+    required = true # May be empty
+  }, {
+    name = return,
+    type = type_ref,
+    required = false # Undefined if missing
+  }, {
+    name = annotations,
+    type = array<annotation_call>,
+    required = true # May be empty
+  }, {
+    name = foralls,
+
+    # A function declaration may include multiple foralls, e.g.
+    # `def foo(arg : T) forall T : List<U> forall U : Numeric`
+    type = array<array<forall_element>>,
+
+    required = true # May be empty
+  }, {
+    # An optional `where` macro expression,
+    # e.g. `def foo() where \{{ expr }}`
+    #
+
+    name = where,
+    type = delayed_macro_expr,
+    required = false
+  }]
+}
+```
+
+==== `forall_element`
+
+A `forall` element declaration, e.g. `forall T : U`. {paper-noindex}
+
+```dson
+{
+  kind = forall_element,
+  fields = [{
+    name = name,
+    type = string,
+    required = true
+  }, {
+    name = restriction,
+    type = type_ref,
+    required = false
+  }]
+}
+```
+
+==== `arg_decl`
+
+An argument declaration node. {paper-excerpt=0,-1 paper-noindex}
+
+The semantics is shared for both function and generic type argument declarations, hence a single node. {#arg-shared-semantics}
+
+TODO: Move these to main spec, and just reference from here.
+
+Generic type arguments are always type-restricted, unlike function arguments which may be either instance- or type-restricted:
+
+```nx
+struct Int<Bitsize: S :: %unum>
+  # `another` is instance-restricted.
+  def add(another : T) forall T :: Int;
+
+  # `target` is type-restricted.
+  def to(target: :: T) forall T :: Int;
+end
+```
+
+```dson
+{
+  kind = arg_decl,
+  fields = [{
+    name = doc,
+    type = string,
+    required = false
+  }, {
+    name = annotations,
+    type = array<annotation_call>,
+    required = true # May be empty
+  }, {
+    name = name,
+    type = string,
+    required = undefined # Must be absent if it is a
+                         # `type_restricted` function argument
+  }, {
+    name = alias,
+    type = string,
+    required = false
+  }, {
+    # Determine whether is it a type-restricted argument,
+    # e.g. `foo :: T`. A type-restricted argument must not have its
+    # `restriction` field left empty and if it is a function argument,
+    # it also can not have `name` field set.
+    name = type_restricted,
+    type = bool,
+    required = true,
+  }, {
+    name = restriction,
+    type = type_ref,
+    required = undefined # Required only if it is
+                         # a type-restricted argument
+  }, {
+    name = default_value,
+    type = expr,
+    required = false
+  }]
+}
+```
+
+==== `arg_pass`
+
+An argument node passed to a callee. {paper-excerpt=0,-1 paper-noindex}
+
+Due to [the shared argument semantics](#arg-shared-semantics){paper-link} argument passing to a callee is defined as a single node.
+
+```dson
+{
+  kind = arg_pass,
+  fields = [{
+    # An explicit name of an argument, e.g. `call(foo: bar)`
+    name = explicit_name,
+    type = string,
+    required = undefined # Incompatible with `explicit_order`
+  }, {
+    # An explicit order of an argument, e.g. `call([0]: bar)`
+    name = explicit_order,
+    type = number,
+    required = undefined # Incompatible with `explicit_name`
+  }, {
+    name = value,
+    type = expr,
+    required = true
+  }]
+}
+```
+
+==== `type_expr`
+
+A valid type expression node. {paper-excerpt paper-noindex}
+
+```dson
+{
+  kind = type_expr,
+  fields = [{
+    name = expr,
+    type = array<variant<type_expr_op, type_ref>>,
+    required = true
+  }]
+}
+```
+
+==== `type_expr_op`
+
+A type expression operator node. {paper-excerpt paper-noindex}
+
+```dson
+{
+  kind = type_expr_op,
+  fields = [{
+    name = op,
+
+    # One of `(`, `)`, `&`, `|`, `^` or `!`
+    type = enum<paren_open, paren_close, and, or, xor, not>,
+
+    required = true
+  }]
+}
+```
+
+==== `type_ref`
+
+A reference to a type node. {paper-excerpt paper-noindex}
+
+A type reference node `path` field may be unresolved.
+
+```dson
+{
+  kind = type_ref,
+  fields = [{
+    name = path,
+    type = string,
+    required = true
+  }, {
+    name = generic_arguments,
+    type = array<arg_pass>,
+    required = true # May be empty
+  }]
+}
+```
+
+==== `trait_decl`
+
+==== `struct_decl`
+
+A struct declaration node `name` field [must be a fully resolved path](#nxapi-namespace-full-path){paper-link}. {paper-excerpt="0,26,."}
+
+```dson
+{
+  kind = struct_decl,
+  fields = [{
+    name = doc,
+    type = string,
+    required = false
+  }, {
+    name = virtual,
+    type = bool,
+    required = true
+  }, {
+    name = path,
+    type = string,
+    required = true
+  }, {
+    name = mutability,
+    type = enum<mut, const>,
+    required = false # Undefined if missing
+  }, {
+    name = visibility,
+    type = enum<public, private>,
+    required = false # Undefined if missing
+  }, {
+    name = annotations,
+    type = array<annotation_call>,
+    required = true # May be empty
+  }, {
+    name = declarations,
+    type = array<decl>,
+    required = true # May be empty
+  }]
+}
+```
+
+==== `enum_decl`
+
+A enum declaration node. {paper-excerpt paper-noindex}
+
+```dson
+{
+  kind = enum_decl,
+  fields = [{
+    name = statement,
+    type = enum<virtual, reopen, declare>,
+    required = true
+  }, {
+    name = is_flag,
+    type = bool,
+    required = true
+  }, {
+    name = doc,
+    type = string,
+    required = false
+  }, {
+    name = type,
+    type = type_ref,
+    required = undefined # Required if `is_flag`,
+                         # otherwise `SInt32` if missing
+  }, {
+    name = values,
+    type = array<enum_val_decl>,
+    required = true # May be empty for virtual enums
+  }, {
+    name = declarations,
+    type = array<decl>,
+    required = true # May be empty
+  }]
+}
+```
+
+==== `enum_val_decl`
+
+A enum value declaration node. {paper-excerpt paper-noindex}
+
+```dson
+{
+  kind = enum_val_decl,
+  fields = [{
+    name = doc,
+    type = string,
+    required = false
+  }, {
+    name = name,
+    type = string,
+    required = true
+  }, {
+    name = value,
+    type = expr,
+    required = false
+  }]
+}
+```
+
+==== `annotation_decl`
+
+An annotation declaration node. {paper-noindex}
+
+```dson
+{
+  kind = annotation_decl,
+  fields = [{
+    name = is_virtual,
+    type = bool,
+    required = true
+  }, {
+    name = doc,
+    type = string,
+    required = false
+  }, {
+    name = path, # A fully resolved path
+    type = string,
+    required = true
+  }, {
+    name = arguments,
+    type = array<arg_decl>,
+    required = true # May be empty
+  }]
+}
+```
+
+==== `annotation_call`
+
+An annotation call can not have any documentation.
+
+```dson
+{
+  kind = annotation_call,
+  fields = [{
+    name = annotation,
+    type = type_ref,
+    required = true
+  }, {
+    name = arguments,
+    type = array<arg_pass>,
+    required = true # May be empty
+  }]
+}
+```
+
+==== `intrinsic_decl`
+
+An intrinsic (i.e. `macro`) declaration node. {paper-excerpt paper-noindex}
+
+```dson
+{
+  kind = intrinsic_decl,
+  fields = [{
+    name = doc,
+    type = string,
+    required = false
+  }, {
+    name = annotations,
+    type = array<annotation_call>,
+    required = true # May be empty
+  }, {
+    name = is_virtual,
+    type = bool,
+    required = true
+  }, {
+    name = visibility,
+    type = enum<public, private>,
+    required = true
+  }, {
+    name = name,
+    type = string, # Without `@`
+    required = true
+  }, {
+    name = arguments,
+    type = array<argument_decl>,
+    required = true # May be empty
+  }]
+}
+```
+
+==== `delayed_intrinsic_call`
+
+A delayed intrinsic call node may replace any non-declaration node.
+
+```dson
+{
+  kind = delayed_intrinsic_call,
+  fields = [{
+    name = content,
+    type = string,
+    required = true
+  }]
+}
+```
+
+=== Examples
+
+```nx
+require "io" from "std"
+
+# This is the main function.
+@[Entry]
+def main
+  @cout << "Hello, world!"
+end
+```
+
+```dson
+[{
+  kind = function,
+  implementation = def,
+  name = main,
+  documentation = "This is the main function."
+  annotations = [{
+    kind = annotation,
+    type = Entry
+  }]
+}]
+```

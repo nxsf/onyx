@@ -1,0 +1,23 @@
+= Basics
+
+Declaration::
+Declaring a entity tells a compiler about its existence.
+A declaration of the same entity may occur multiple times.
+Declaration allows implementation of functions.
+
+Implementation::
+Only a previously declared entity shall be implemented.
+
+Definition::
+Defining means declaration and implementation, in a single statement.
+
+Most of the time, correctness is lazily checked upon actual reference rather than at the moment of declaration.
+For example, a function body would be checked for semantic correctness on each specialization.
+Or trait implementation correctness.
+
+TODO: Begin with code which just-works (use structs), depends on how powerful a compiler is to optimize that.
+Then begin applying unsafe and wordy optimizations (explicit vectors, pointer arithmetics, target-specific types or even instructions, raw assembly).
+Blackbox unless explicitly accessed.
+
+TODO: CLI -- provide "debug", "development" and "production" modes.
+

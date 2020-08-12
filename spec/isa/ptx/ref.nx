@@ -1,0 +1,21 @@
+decl enum PTX::ChannelDataType;
+decl enum PTX::ChannelOrder;
+
+decl struct PTX::TexRef
+  enum FilterMode
+    val Nearest
+    val Linear
+  end
+
+  decl width()
+  decl height()
+  decl depth()
+
+  decl channel_data_type() : ChannelDataType
+  decl channel_order() : ChannelOrder
+
+  decl normalized_coords() : Bool
+
+  # Ignored in Independent Texture Mode
+  decl filter_mode() : FilterMode
+end

@@ -1,0 +1,275 @@
+= Types
+
+A type determines meaning of an entity.
+
+TODO: Any type is a namespace.
+
+== Object types
+
+xref:primitives[], xref:structs[] and xref:enums[] are object types: they represent initializeable objects in runtime.
+
+== Non-object types
+
+xref:traits[] and xref:namespaces[] do not represent a runtime object, thus referenced to as distinct non-object types.
+
+== Type instances
+
+A type itself can be a runtime object, called a _type instance_.
+
+A type instance may represent an incomplete type.
+
+A type instance itself has `Type<T>` type, where `T` is the type a type instance represents. For example, `Type<SInt32>` represents the `SInt32` type in runtime.
+
+// However, its practical value is questionable
+A type instance type can be recursive, e.g. `Type<Type<T>>`.
+
+// TODO: Having a trait type instance is hardly practical, as a trait does not have callable things on it.
+
+A type instance has semantics similar to an object instance, emphasized:
+
+* Static functions defined on the type can be called on a type instance.
+* A type instance can not be used as a generic argument.
+
+.Using type instances
+====
+```nx
+let x = SInt32 : Type<SInt32>
+
+# Calling static functions on a type instance
+assert(x::MAX == SInt32::MAX)
+assert(x.zero == SInt32.zero)
+```
+====
+
+A type instance does not carry any information about the type it represents, in runtime; thus occupying zero memory.
+
+In a xref:union[], a type instance option does not contribute into the union's total size.
+Therefore, a union containing exclusively type instance options has zero size.
+
+TIP: A xref:variant[] is combination of a switch with a union.
+A type instance option increases a variant's switch size, but not its union size.
+
+.A type instance size
+====
+```nx
+let x = @rand(SInt32, FBin64) : Variant<Type<SInt32>, Type<FBin64>>
+assert(@bitsizeof(x) == 1) # The switch occupies exactly one bit
+
+assert(@sizeof(Union<Type<SInt32>, Type<FBin64>>) == 0)
+```
+====
+
+== Generic types
+
+TODO: Type context and instance context.
+
+A namespace can be a generic type.
+
+A generic type conveys a number of _generic arguments_ associated with it.
+Generic arguments are accessible within a generic type in compile time using the `T::<A>` or `T::<0>` syntax, e.g. `assert(SInt32::<Bitsize> == 32)`.
+
+A simple arithmetic can be applied to literals in type context.
+
+An object with incomplete types?
+
+A generic argument may be either a type or a literal.
+
+It is legal to call a function (both static and instance) on an incomplete generic type as long as a generic type with an undefined value is not referenced within the function.
+
+Once a generic type is referenced from within a program with a unique combination of its generic arguments, it is said to be _specialized_.
+
+Every specialization of a generic object type is a distinct type with its own set of members and methods.
+
+Every generic type specialization leads to evaluation of delayed macros defined within its declaration scope.
+
+.Generic type declaration syntax
+```ebnf
+(*
+  A generic arguments declaration syntax
+  is shared with other argument declarations.
+
+  ```
+  primitive Array<Element: T, Size: S : %num>
+  ```
+*)
+generic_args_decl = "<", arg_decl, ">";
+```
+
+.Generic type specialization syntax
+```ebnf
+(*
+  A generic type specialization syntax
+  is shared with other argument passes.
+
+  ```
+  SInt32 : SInt<32> : SInt<Bitsize: 32>
+  ```
+*)
+generic_id = id, "<", arg_pass, ">";
+```
+
+Generic argument declaration and passing semantics are described in the arguments section.
+
+Every generic argument passed is a separate type expression.
+
+== Type expressions
+
+A type expression consists either of a single type, or of a logical expression, i.e. a sequence of logical operations applied to types.
+
+A type expression may be wrapped in parentheses.
+
+A type expression may contain parentheses to change precedence of logical operations in accordance to logical algebra rules.
+
+// Every generic argument passed subtitutes a separate type expression.
+
+Type expression operators have higher precedence than runtime bitwise binary operators, so that:
+
+```nx
+# x ~ A | B | 42   # Panic! `42` is not a type
+# x ~ (A | B) | 42 # Panic! Ditto
+(x ~ A | B) | 42 # OK
+```
+
+.Type operators
+|===
+| Operator | Meaning
+
+| `T < U`
+| Does `T` extend `U`?
+
+| `T <= U`
+| Does `T` extend or is `U`?
+
+| `T <~ U`
+| Does `T` derive from `U`?
+
+| `T!`
+| Ensure `T` is concrete, panic otherwise
+
+| `T!?`
+| Is `T` concrete?
+
+| `T in U`
+| Is `T` one of `U`, where `U` is tuple of types?
+
+| `* < U`
+| Tuple of all types `T` matching `T < U`
+
+| `*! < U`
+| Tuple of concrete types `T` matching `T < U`
+
+| `T->($)`
+| Map a tuple of types `T`
+
+| `T-?>($)`
+| Select from a tuple of types `T`
+
+| `T-!>($)`
+| Reject from a tuple of types `T`
+
+| `T-@>($)`
+| Ensure all types in tuple `T` match the condition
+
+| `T-@!>($)`
+| Ensure neither of types in tuple `T` match the condition
+|===
+
+Restriction operators imply concrete restrictions.
+
+.Restriction operators
+|===
+| Operator | Meaning
+
+| `: T`
+| Be `T` exactly; a.k.a. exact restriction
+
+| `~ T`
+| Be one of `T`, i.e. derive from, extend, or be `T`; a.k.a. behavioural, fuzzy restriction
+|===
+
+A concrete type is a type with size known at some point of program compilation.
+A variable may only be of a concrete type.
+
+A complete struct or class is one having its memory layout defined, i.e. not allowing new instance variables to be added.
+
+A complete enum is one disallowing addition of new enum values, i.e. having all of its values defined.
+
+An incomplete type is always inconcrete.
+
+== Restriction
+
+A run- or compile-time value can be restricted to a type expression.
+
+Runtime value restriction operators are `:`, `~`, `:?` and `~?`.
+Similarly, compile-time value restriction operators are `::`, `~~`, `::?` and `~~?`.
+
+A restriction is performed in accordance to the logic rules within a type expression, and recursively from outer type to inner type in generics.
+
+=== Concrete restriction
+
+Concrete restriction binary operation is denoted by `:` and requires the left operand to be exactly IS the right operand type.
+
+The `:` is for instance-type restriction.
+`::` is for type-type restriction.
+
+`:?` and `::?` evaluate to boolean literals `true` or `false` instead of failing on compilation.
+
+// TODO: Move to var docs
+Practically, a member declaration can be fuzzy-restricted, e.g. `let x ~ SInt = 42`, which would infer `SInt32`.
+However, `let x ~ SInt = 42u` would fail.
+A member declaration would fail if can not infered to be a concrete type.
+
+=== Fuzzy restriction
+
+Fuzzy restriction binary operation is deonted by `~`.
+It ensures in compile time that the left operand is OF the right operand type.
+
+"`T<A>` of `U<B>`\" means that either `T<A>` is exactly `U<B>` or derivative of `U<B>`. Check is happening sequentially over each part of a type (the type itself and its generic arguments), recusively.
+
+`T ~ Undef` is always true; this allows for `SInt<32> ~~ SInt`.
+However, `T : Undef` is always false.
+
+Some built-in types have special generics notation, e.g. anonymous enums, structs and tuples, lambdas, functions.
+
+TODO:
+
+```nx
+Point::stat # Function<>
+Point::stat() # A call
+Point:inst # Function<>
+Point:inst(&point) # A call
+Point:x # A variable node?
+Point:x(&point) # A call
+Point.stat # A call
+point.inst # A call
+Point~Drawable:draw(&point)
+point~Drawable.draw
+
+Enum<{ A = 1, B, C = 10 }>
+enum { A = 1, B, C = 10 }
+::(:a); ::(1)
+.val == Enum<{ A = 1, B, C = 10 }>::A
+.ord == 1
+
+Tuple<{ SInt32, SInt32, SInt32 }>
+tuple { SInt32, SInt32, SInt32 }
+::(1, 2, 3)
+
+# Has default initializer, where must reference args by names.
+# Can not reopen. Same structs with different default values are the same.
+Struct<{ foo : SInt32 = 42 }>
+struct { foo : SInt32 = 42 }
+
+Lambda<{ [C] (A) : R }>
+~> |[c] (a) : R|
+
+Function<{ (A) : R }>
+T::f
+```
+
+TODO: Behavioral precedence upon fuzzy-restricting.
+
+TODO: `String<4>*` -> `String*`
+
+include::types/xbin.adoc[leveloffset=+1]
+include::types/xdec.adoc[leveloffset=+1]

@@ -1,0 +1,16 @@
+= Array
+
+```nx
+final ary := mut [10, 20, 30] : mut Array<SInt32, 3> : mut<SInt32[3]>
+
+final new := ary[0] = -10
+assert(new == ary[0] == -10)
+
+final old := ary[1] <<= 40 # Replacing an element
+assert(old == 20)
+
+new = ary[1] <=> ary[2]
+assert(new == *(&ary[1]) == 30)
+
+assert(ary == [-10, 30, 40])
+```

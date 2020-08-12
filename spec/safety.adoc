@@ -1,0 +1,101 @@
+== Safety
+
+There are three levels of runtime safety in descending order, namely `threadsafe`, `fragile` and `unsafe`.
+
+The following operations are `threadsafe`:
+
+* Calling a method with at least `fragile` safety modifier on a value with local storage.
+
+The following operations are `unsafe`:
+
+* Coercion, unless special conditions are met;
+* Some of pointer operations, depending on its storage.
+
+All other operations are `fragile` by default.
+
+=== Safety statements
+
+A program shall not invoke a lesser-safe code from a higher safety environment.
+Instead, a lower safety statement shall be used to wrap the lesser-safe code.
+
+.Safety statements
+[syntax]
+----
+fragile_statement =
+  "fragile!",
+  expr | block();
+
+unsafe_statement =
+  "unsafe!",
+  expr | block();
+----
+
+A safety statement itself becomes of the specified safety level.
+
+[TIP]
+====
+Safety statements transfer the safety responsibilities from the compiler to a developer.
+It is easy then to debug the program by grepping source files with `unsafe!` and `fragile!` patterns.
+
+For example, calling an `unsafe` function from a `fragile` context would require wrapping the call into an `unsafe!` statement like so: `unsafe! foo()`.
+Here, a developer explicitly stated that they are fully responsible for consequences caused by calling `foo`.
+====
+
+// A safety statement accepts either a single expression or a block of code.
+// In the latter case, the block shall be properly terminated with either the `end` keyword or by wrapping it in curly brackets.
+
+=== Safety modifiers
+
+There are `threadsafe`, `fragile`, `unsafe` and `undefsafe` safety modifiers.
+An `undefsafe` safety modifier implies that the modified entity has undefined safety.
+A type, function or macro declaration has a safety modifier.
+
+.Safety modifiers
+[syntax]
+----
+safety_modifier =
+  "threadsafe" |
+  "fragile" |
+  "unsafe" |
+  "undefsafe";
+----
+
+The global namespace implicitly has the `fragile` safety modifier.
+
+Declarations other than macro declarations implicitly inherit the containing declaration safety modifier unless overriden.
+A macro declaration always has an implicit `undefsafe` safety modifier unless overriden.
+
+[TIP]
+====
+For example, a `struct Foo` declared in the top-level namespace would be implicitly `fragile struct Foo`.
+
+Similarly, an instance method declared in a `threadsafe struct Bar` would be implicitly `def threadsafe foo`.
+====
+
+A trait function declaration with undefined storage has the `undefsafe` safety modifier unless explicitly overriden.
+A `derive` statement inherits the containing declaration safety modifier unless explicitly overriden.
+
+====
+```nx
+trait Foo
+  # Implicitly `undefstor undefsafe`.
+  decl foo : Void
+end
+
+struct Bar
+  derive Foo
+    # Implicitly `instance fragile`.
+    impl foo;
+  end
+
+  threadsafe derive Foo
+    # Implicitly `instance threadsafe`.
+    impl foo;
+  end
+end
+```
+====
+
+// TODO: Can variable declarations have safety? No, that doesn't make sense.
+
+// TODO: `volatile` is applicable to variables only?

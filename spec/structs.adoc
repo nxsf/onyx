@@ -1,0 +1,202 @@
+= Structs
+:icons: font
+
+Can only define `val` fields, which mutability depends on the containing struct. Struct have default initializer, can not have finalizers.
+
+TODO: `: this` in function returns control exactly to `this`.
+
+TODO: Returning or throwing an alive struct does not require moving it, as the act the passing an argument to the caller implicitly moves the lifetime responsibility to it. {#lifetime-return-move}
+
+== Members
+
+A member is a struct instance variable.
+
+[[struct-lifetime]]
+== Lifetime
+
+[[struct-initialization]]
+=== Initialization
+
+[[struct-finalization]]
+=== Finalization
+
+[[struct-reopening]]
+== Reopening
+
+An already defined struct may be defined again.
+Instead of a complete redefining, the definition continues as if it was the original definition.
+Thus, instead of redefinition it is called _reopening_.
+
+A struct reopening may be either complete or incomplete, set by `compl` or `incompl` definition modifiers accordingly.
+Following the usual definition rules, reopening a struct is implicitly complete by default.
+
+Declaring new members is limited by the reopened struct's completeness.
+
+== Completeness
+
+A complete struct has all its members declared, thus having a defined memory layout (unless xref:ordering[reordered]).
+
+Only a complete struct may be initialized (see xref:struct-lifetime[]).
+
+Once complete, a struct may not be xref:struct-reopening[reopened] as incomplete.
+
+A complete reopening of an already complete struct prohibits declaring new members and extending from structs.
+
+By default, a struct definition is implicitly complete.
+
+== Extending
+
+A struct may extend at most one another struct.
+
+An extending struct inherits all of the extended struct declarations, excluding type declarations, in the same order of declaration.
+Also see xref:ordering[].
+
+.The possibility of an extension based on the completeness status of a struct
+|===
+| Extending struct | Extended struct | Extension possible?
+
+| Complete
+| Complete
+| Yes
+
+| Complete
+| Incomplete
+| No
+
+| Incomplete
+| Incomplete
+| Yes ^1^
+|===
+
+An `extend` statement shall be placed before any field implementations in a struct.
+
+Regardless of where an `extend` statement is placed, the extending struct members follow the extended struct members in memory unless the extending struct is unordered.
+
+```nx
+struct Foo
+  let x
+end
+
+# Memory layout of `Bar`
+# would be `x, y, z`
+struct Bar
+  extend Foo;
+  let y
+  let z
+end
+```
+
+== Memory layout
+
+[[ordering]]
+=== Ordering
+
+The order of a struct fields in memory is undefined.
+
+A struct may be reordered.
+In that case, the order of its members is not defined.
+
+TIP: A reordered struct memory layout is a subject to compiler optimizations.
+
+To make a struct reordered, the built-in zero-arity `Reorder` annotation shall be applied to it.
+
+A struct extending from a reordered struct has undefined order of extended struct members only, in the boundaries of memory occupied by extended struct members.
+Applying the `Reorder` annotation to an extending struct mixes the boundaries of memory occupied by all members, thus allowing for more optimal reordering.
+
+.Deriving from a reordered struct
+====
+```nx
+@[Reorder]
+struct Foo
+  let foo_a : SInt32
+  let foo_b : FBin64
+  let foo_c : SInt32
+end
+
+# The memory layout would be the following:
+# `[foo_*]x3, bar_a, bar_b, bar_c`,
+# where `foo_*` have undefined order.
+struct Bar
+  extend Foo;
+
+  let bar_a : SInt32
+  let bar_b : FBin64
+  let bar_c : SInt32
+end
+
+# In this case, the order of members
+# of `Baz` is totally undefined.
+@[Reorder]
+struct Baz
+  extend Foo;
+
+  let bar_a : SInt32
+  let bar_b : FBin64
+  let bar_c : SInt32
+end
+```
+====
+
+=== Packing
+
+== Anonymous structs
+
+An anonymous struct may only declare indexed or named members.
+
+// TODO: Move to arguments?
+[[explicit-indexing-rule]]
+.Explicit indexing rule
+Indexed member declarations following a named or an explicitly indexed member declaration must be explicitly indexed.
+
+An anonymous struct member can not have a default value, thus each member must be restricted to a concrete type.
+
+The memory layout of a non-reordered anonymous struct matches its members declaration order.
+Thus, the order of members (even named) in a non-reordered anonymous struct matters.
+
+=== Anonymous struct literals
+
+An anonymous struct literal consists of an arbitrary amount of implicitly or explicitly indexed or explicitly named values, wrapped in parentheses.
+
+Values declaration follows the xref:explicit-indexing-rule[].
+
+Trailing commas are allowed in anonymous struct literals.
+
+A single implicitly indexed value without a trailing commas is treated as an expression rather than an anonymous struct.
+
+=== Anonymous struct destruction
+
+An anonymous struct may be destructed using the splat operator.
+
+// TODO: Move to multi-assignment and varg sections
+
+A destructed anonymous struct may be multi-assigned to a set of variables, or become a varg restriction.
+
+Upon multi-assignment, an anonymous struct member can be referenced by either its implicit or explicit index, or by its name. References follow the xref:explicit-indexing-rule[].
+
+.Multi-assignment of an anonymous struct
+====
+```nx
+# Members `[0]` and `[1]` are referenced
+# by their implicit indices 0 and 1.
+# Members `foo` and `[2]` are referenced explicitly.
+let a, b, foo: c, [2]: d = *('a', [1]: 'b', foo: 'c', [2]: 'd')
+```
+====
+
+=== Anonymous struct member ordering
+
+An anonymous struct may become reordered by setting its `Reordered` generic argument to `true` (`false` by default).
+
+The memory layout of a reordered anonymous struct may not match its members declaration order due to possible reordering of its memebers.
+
+Two reordered anonymous structs containing the same set of members but in different order of declarations are guaranteed to have the same memory layout.
+
+An anonymous struct literal may become reordered if appended with `r`.
+
+=== Packed anonymous structs
+
+An anonymous struct may become packed by setting its `Packed` generic argument to `true` (`false` by default).
+
+A packed struct and its members have alignment of 1.
+
+An anonymous struct literal may become packed if appended with `p`.

@@ -1,0 +1,24 @@
+== Design
+
+This section describes design rationale of the Onyx language and accompanying standards.
+
+Infer as much as possible, unless ambiguous.
+
+Multiple syntaxes to achieve the same task is appropriate in some cases.
+
+It is good to have full-character, short-character and symbolic representation of something so a developer could choose between readability and code size.
+For example, `equals?`, `eq` and `==`.
+
+The language is built on a finite set of simple rule blocks.
+A lesser set is better.
+For example, function and generic arguments follow the same semantics and syntax.
+
+=== Annotations VS keywords
+
+The less keywords are in the language, the better.
+
+Reuse keywords as much as possible.
+
+If an annotation is very often used, consider replacing it with a keyword.
+However, low-level annotations should not be keywords.
+For example, `@[Align]` and `@[Volatile]` are annotations and not variable modifiers.

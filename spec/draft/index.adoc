@@ -1,0 +1,53 @@
+== Audience
+Is expected to read ISO C17
+== Language design
+== Specification design
+If a thing requires > 1 thesis, it can be a section.
+Sometimes, sequential thesises are okay.
+== Types
+=== Restrictions
+=== Type
+exists in runtime
+=== Namespace
+=== Trait
+=== Special object types
+==== Vector
+==== Union
+==== Void
+==== Lambda
+=== Object
+exists in runtime
+=== Built-in type
+Which is built-in
+=== Scalar object type
+=== Aggregate object type
+=== Built-in numerical types
+Numerical type is nuilt-in scalar object type
+Numerical type prefixes, suffixes
+==== Real (is a built-in)
+==== Rational
+==== Integer
+Explaination, literal examples
+==== IEEEFloat
+==== QNum
+a.k.a. XBin
+==== BCD
+a.k.a. XDec (TODO: _Df2 == _D2f2)
+==== Hypercomplex
+==== Complex
+==== Quertenion
+==== Vector
+=== Built-in aggregate types
+==== Array
+==== Tensor
+=== User-defined types
+==== Enum
+is scalar
+anonymous enum
+==== Struct
+anonymous struct
+==== Class
+similar to struct, but has no initializer and const by default
+
+TODO: `to_Qe-7`; `to_u` and `as_u` valid if `_uX` can be determined unambigously, e.g. `Char<UCS2>.to_u` is clearly `to_u16`.
+`i16.as_i32` is OK, `i16.as_i8` is not. `i16.to_iX` is not defined, but `.as_iX` is, because there is no need in coversion.

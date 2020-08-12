@@ -1,0 +1,17 @@
+= Notes
+
+== On anonymous structs
+
+It is not possible to splat-assign a named anonymous struct member without referencing its name.
+Otherwise, what would be the behavior
+
+====
+```nx
+def calc : Struct<{ res: FBin64, err: FBin64 }>
+  return (res: a, err: b)
+end
+
+# let x, y = *calc # Panic!
+let res: x, err: y = *calc
+```
+====

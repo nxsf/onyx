@@ -1,0 +1,204 @@
+== Functions
+
+Can not user-declare non-operators ending with `=` (e.g. `name=` is invalid).
+
+=== Declaration
+
+[source, ebnf]
+--
+closure_arg_decl = (* TODO: *);
+
+(* A closure declaration may be explicitly empty (e.g. `[]`). *)
+closure_decl =
+  "[",
+  [closure_arg_decl, {",", closure_arg_decl}, [","]],
+  "]";
+
+(*
+  ```
+  ~> || body # Any closure, types infered
+  ~> |[]| body # Explicitly empty closure
+  ~> |[C] A : R|
+  ```
+*)
+
+block_restriction = "=>", [block_proto];
+
+type_restriction = WS, (":" | "~"), WS, type_expr;
+
+(*
+  For declarations, at least either identifier or restriction
+  must be specified, whereas aliasing is not possible.
+
+  For implementations, at least either of three must be specified.
+*)
+arg_decl =
+  (* Optional alias, unapplicable to function declarations *)
+  [id, NB, ":"],
+
+  (* An optional argument identifier *)
+  [id],
+
+  (* An optional argument restriction *)
+  [type_restriction | block_restriction];
+
+(*
+  An named argument declaration with restriciton.
+  If type of the restriction is omitted, it is assumed to be concrete.
+  So that, `(arg: T)` == `(arg: : T)` != `(arg: ~ T)` == `(arg ~ T)`.
+*)
+arg_decl =
+  [id, NB, ":"], (* Optional argument alias *)
+  [var_decl], (* Optional argument variable declaration *)
+  [":" | "~"], id;
+
+(*
+  An anonymous argument declaration
+  with restriction, e.g. `(: T)` != `(~ T)`.
+*)
+arg_decl = (":" | "~"), id;
+
+fun_decl = "decl", id, "(", {arg_decl}, ")";
+--
+
+=== Storage
+
+Function storage may be `static`, `instance` or `undefstor`.
+The latter is only applicable to function declarations with traits.
+
+=== Mutability
+
+Function mutability may be `mut`, `const` or `undefmut`.
+The latter is only applicable to function declarations with traits.
+
+=== Manipulating definitions
+
+==== Unimplementation
+
+An implementation may be fully or partially erased using an `unimpl` clause.
+
+Only an existing implementation may be unimplemented.
+
+.Unimplementing
+====
+```nx
+def foo(x ~ Int);
+
+# unimpl foo(x ~ FBin) # Panic! Can not find matching implementation
+
+unimpl foo(x : SInt32) # OK, now we don't have an implementation
+                       # for this particular type
+# foo(42)              # Panic!
+foo(42i16)             # OK
+
+unimpl foo(x ~ SInt) # OK, now we only have implementation for `UInt`
+# unimpl foo(x ~ SInt32) # Panic! Can not find matching implementation
+
+foo(42) # OK
+# foo(-1) # Panic! Can not find overload for `foo(x : SInt32)`
+```
+====
+
+==== Reimplementation
+
+=== Generators
+
+Generator is like macro, but bound to specific instance.
+
+A function accepting a block argument is called a generator function.
+
+```nx
+# `=>` is a special "block restriction"
+decl foo(=>) # An anonymous block arg
+
+# If block arity > 1, requires all block args to be named
+decl bar(success: =>, failure: =>) # Named block args
+
+# Having a label in argument declaration
+# always expects it to be a block label.
+impl foo(%block: =>) { %block(42) }
+# foo(block: => { }) # Panic! Declaration prohibits named argument
+foo(=> { }) # OK
+
+# Aliasing
+impl foo(block: %blk =>) { %blk(42) }
+```
+
+=== Returning
+
+A returned value is always moved.
+
+Variants are treated specially.
+If returned value _r_ is rval or mval, then `return r` is a shortcut to `T?(r)`.
+If returned value _r_ is sval, then `return r` is a shorcut to `T?(++<-++ r)`.
+
+```nx
+@[Trivial]
+class Klass
+end
+
+def foo : Klass
+  final klass := Klass()
+  return klass # Directly returned, thus implicitly moved
+  # return Klass() # Ditto
+end
+
+def bar : Klass?
+  if @rand?
+    final klass := Klass()
+    return klass # Shortcut to `.(<- klass)`
+    # return Klass() # Ditto
+  else
+    return void # Shortcut to `.(void)`
+  end
+
+  # An absence of `return` is implicitly `return void`
+end
+
+def baz : (Klass, Klass)
+  final klass := Klass()
+
+  # Can not imply moving in a
+  # non-directly returned expression,
+  # thus by default `klass` is copied
+  return (klass, <- klass)
+end
+```
+
+TODO: Hidden (non-public) functions should be treated as public.
+For example, it may be better to mark them `unsafe` rather then wrap their bodies in `unsafe!`.
+
+TODO: Can overload: visibility, storage, mutability.
+Can not: safety, throwing-ness, purity.
+
+=== Pure functions
+
+NOTE: This section is to be discussed yet.
+
+Only a function can be pure, neither generator nor proc.
+
+A function can be marked as pure using the `pure` modifier.
+Without that modifier, a function is implicitly `impure`, even if a compiler can prove it is pure.
+
+. A pure function does not have side effects:
+.. It only writes to local storage;
+.. It does not call impure functions.
+. A pure function only reads from caller, local or temporal storages.
+
+If any of the statements above is false for a function marked `pure`, a compiler panics.
+
+A pure function can be throwing: modifying a backtrace is not considered a side-effect.
+
+.Pure functions
+====
+```nx
+pure def sum([]: a, []: b)
+  return a + b
+end
+
+def global_add([]: a)
+  static let global = 42
+  return global + a # Reading from static storage, thus impure
+end
+```
+====

@@ -1,0 +1,130 @@
+= Variable completeness
+
+A _complete-on-specialization type_ (_CoS type_) is treated as incomplete prior to specialization, but it becomes complete upon specialization.
+In a type restriction, a wildcard in a type expression makes the restricted type CoS.
+
+== Completeness modifiers
+
+A data type definition or reopening may have a completeness modifier, one of the listed in xref:completeness-modifiers[].
+
+[[completeness-modifiers]]
+.Completeness modifiers
+|===
+| Modifier | Meaning
+
+| `incompl`
+| Incompleteness
+
+| `compl`
+| Completeness
+
+| `specompl`
+| Completeness-on-specialization a.k.a. CoS
+|===
+
+// A data type definition with explicitly applied completeness modifier is said to be _explicitly x_, where _x_ is the completeness state depending on the modifier; otherwise, the type is _implicitly x_.
+
+A data type implementation or reopening statement has an implicit `specompl` modifier.
+
+[info]
+--
+Unless unsafely relying on a type's internal layout, library authors are encouraged to leave structs and classes complete-on-specialization, and to provide critical enum values explicitly.
+
+// TODO: Switching on a NOT explicitly complete enum requires else branch?
+// TODO: Reopening a enum disallows to rewrite existing values?
+--
+
+A data type reopening statement overwrites the existing type definition completeness modifier.
+
+An incomplete or CoS enum type definition allows further reopening statements to implement enum values.
+An incomplete or CoS struct or class type definition allows further reopening statements to implement fields.
+
+A type shall not extend from an explicitly incomplete type definition, but may from a CoS implementation due to xnum:spec-of-child-type-triggers-parent[].
+
+A `specompl` modifier shall not be applied to an explicitly complete type definition.
+A `specompl` modifier can be applied to an explicitly incomplete type definition.
+
+A `compl` modifier may be applied to a data type implementation or reopening statement, making the type definition explicitly complete.
+
+// An `incompl` modifier may be applied to a data type implementation or reopening statement.
+
+An implicitly CoS data type complete data type may be forced to be explcitly incomplete with the `incompl` modifier.
+
+A unit type is deemed to be always complete, and shall not have a completeness modifier.
+
+.Enforcing a type completeness
+|===
+| Inferred type completeness | Modifier | Allowed?
+
+.4+| Complete
+| `compl`
+| ✔
+
+| `specompl`
+| ✔
+
+| `incompl`
+| ✔
+
+.4+| Incomplete
+| `compl`
+| ✗
+
+| `specompl`
+| ✗
+
+| `incompl`
+| ✔
+|===
+
+.Delayed completeness
+====
+```nx
+class Processor
+  # Variant of pointers to all possible `AbstractLogger` implementations.
+  delcompl let logger : Variant((*! ~ AbstractLogger)->$&)
+
+  def initialize(logger : @typeof(self:logger));
+  def initialize(this.logger);
+end
+
+# Or
+#
+
+class Processor
+  # Variant of pointers to all possible `AbstractLogger` implementations.
+  alias L = Variant((*! ~ AbstractLogger)->$&)
+
+  let logger : L
+
+  def initialize(logger : L);
+end
+```
+====
+
+Applying the `@[Align]` annotation to a value with delayed completeness prevents it from contributing into the containing type's or function's delayed completeness, but the value type itself still has delayed completeness.
+During the final compilation stage, a compiler shall panic if the resulting value type does not satisfy the alignment requirement, e.g. its size exceeds the alignment value.
+
+.Applying an alignment to a field with delayed completeness
+====
+```nx
+compl class Processor
+  # We're assuming that there would not be more
+  # than 2⁸ implementations of `AbstractLogger`,
+  # thus requiring a minimum of that alignment.
+  # TODO: Another range literal syntax?
+  # TODO: Define literal arithmetic: allow basic math ops.
+  @[Align(%r[@sizeof(Pointer::Size) + 1), ∞])]
+  @[MinAlign(@sizeof(Pointer::Size) + 1)]
+  delcompl let logger : Variant((*! ~ AbstractLogger)->$&)
+end
+
+# Applies optimal alignment depending on the target.
+# Would be at least `@sizeof(Pointer::Size) + 1` bytes.
+@assert(@sizeof(Processor) == 16)
+
+# @sizeof(Processor:logger) # Still unknown
+```
+====
+
+If an object type is reopened, then the `reopen` statement may have one of the xref:completeness-modifiers[], with `compl` being the implicit default.

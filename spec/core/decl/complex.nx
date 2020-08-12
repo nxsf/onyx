@@ -1,0 +1,60 @@
+require "./numeric.nx"
+require "./hypercomplex.nx"
+require "./imaginary.nx"
+
+# The memory layout of a complex number matches such of an array
+# of two numbers of the type `T`, whereas the first element
+# is the real part, and the second element is the imaginary part.
+decl primitive Core::Complex<Type: T ~ Real>
+  # A complex number is a specialization of a hypercomplex number.
+  derive Hypercomplex<T>;
+
+  # A built-in constructor for a complex number.
+  #
+  # ```
+  # using Core
+  #
+  # assert(Complex(1, 2j) : Complex<$int> == Complex(1, .(2)))
+  # assert(Complex<$double>() == Complex(0.0, .(0))
+  # ```
+  static nothrow decl ()(
+    real : T = 0,
+    imaginary : Imaginary<T> = .(0))
+
+  # Return a reference to the real part of the complex number.
+  #
+  # NOTE: Would return a read-only reference if the number is final.
+  decl nothrow real() : T&irw
+
+  # Return a reference to the imaginary part of the complex number.
+  #
+  # NOTE: Would return a read-only reference if the number is final.
+  decl nothrow imaginary() : Imaginary<T>&irw
+
+  # Convert the complex number to the same
+  # or higher-bits representation.
+  # Would call `as!` on its parts recusively.
+  @[MayPanic("If data loss is possible")]
+  @[MayPanic("In case of underlying type mismatch")]
+  decl nothrow as(~ Complex)
+
+  # Convert the complex number to another (including lower-)
+  # bits representaion, allowing data loss.
+  # Would call `as!` on its parts recusively.
+  @[MayPanic("In case of underlying type mismatch")]
+  decl nothrow as!(~ Complex)
+
+  {% for t, _ in ipairs{"float", "double", "long double"} do %}
+    # Convert to the same or higher-bits complex floating C type.
+    #
+    # NOTE: This method is only declared if `T ~ Float`.
+    @[MayPanic("If data loss is possible")]
+    virtual decl nothrow as(: $`{{ t }} _Complex`)
+
+    # Convert to another (including lower-) bits
+    # complex floating C type, allowing data loss.
+    #
+    # NOTE: This method is only declared if `T ~ Float`.
+    virtual decl nothrow as!(: $`{{ t }} _Complex`)
+  {% end %}
+end

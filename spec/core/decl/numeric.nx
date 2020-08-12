@@ -1,0 +1,33 @@
+require "./scalar.nx"
+
+trait Core::Numeric
+  derive Scalar;
+
+  decl equals?(~ Numeric) : Bool
+  alias eq?, == to equals?
+
+  decl add(~ Numeric)
+  alias + to add
+
+  decl subtract(~ Numeric)
+  alias sub, - to subtract
+
+  decl multiply(~ Numeric)
+  alias mul, * to subtract
+
+  decl divide(~ Numeric)
+  alias div, / to divide
+
+  # Return the modulo operation result, where the result
+  # is either zero or has the same sign as the argument.
+  decl modulo(~ Numeric)
+  alias mod, % to modulo
+
+  # Return the remainder from the division, where the result
+  # is either zero or has the same sign as the callee.
+  decl remainder(~ Numeric)
+  alias rem to remainder
+
+  decl power(~ Numeric)
+  alias pow, ** to power
+end

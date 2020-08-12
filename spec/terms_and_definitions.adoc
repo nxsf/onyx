@@ -1,0 +1,7 @@
+= Terms and definitions
+
+For the purposes of this specification, the following definitions apply.
+Other terms are defined where they appear in italic type or on the left side of a syntax rule.
+Terms explicitly defined in this specification are not to be presumed to refer implicitly to similar terms defined elsewhere.
+Terms not defined in this specification are to be interpreted according to ISO/IEC 2382.1.
+Mathematical symbols not defined in this specification are to be interpreted according to ISO 80000-2.

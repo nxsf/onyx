@@ -1,0 +1,66 @@
+require "./integer.nx"
+
+# A binary 2's complement integer.
+@[LiteralDefaults(
+  SInt => SInt32,
+  UInt => UInt32,
+  Int => SInt32)]
+@[LiteralSuffix(
+  regex: /(?<Type>s?i|ui?)(?<Bitsize>\d+)?/,
+  # kind: "integer",
+  restriction: \{{
+    local type = nx.ctx.match["Type"]
+    local signed = (type == "si") or (type == "i")
+
+    local sign = signed and "S" or "U"
+    local bitsize = tonumber(nx.ctx.match["Bitsize"])
+
+    if bitsize then
+      sign .. "Int<" .. bitsize .. ">"
+    else
+      sign .. "Int"
+    end
+  }})]
+impl primitive Int<Signed ~ %Bool, Bitsize ~ %Size>
+  derive Integer;
+
+  impl initialize(value : self)
+  end
+
+  impl initialize(literal : L) forall L ~ %!Integer
+    \{%
+      local bitsize = nx.lkp("Bitsize")
+      local value = nx.lkp("L").value
+
+      if nx.lkp("Signed").value then
+        if (value >= 2 ** (bitsize - 1)) or
+          (value < -1 * 2 ** bitsize) then
+          nx.panic("Invalid value for signed " ..
+            bitsize .. "-bit integer")
+        end
+
+        -- Somehow write bytes into `this`...
+      else
+        if (value >= 2 ** bitsize) or (value < 0) then
+          nx.panic("Invalid value for unsigned " ..
+            bitsize .. "-bit integer")
+        end
+
+        -- Somehow write bytes into `this`...
+      end
+    %}
+  end
+
+  impl initialize(literal : L)
+  forall L ~ %!Boolean
+  where !Signed && Bitsize == 1
+    \{% if nx.lkp("L").value then %}
+      this.initialize(1)
+    \{% else %}
+      this.initialize(0)
+    \{% end %}
+  end
+end
+
+@[LiteralSuffix(/^b$/)]
+reopen Bool;

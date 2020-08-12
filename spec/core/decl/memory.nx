@@ -1,0 +1,15 @@
+namespace Core::Memory
+  enum Ordering
+    val Unord  # Unordered
+    val Mono   # Monotonic
+    val Acq    # Acquire
+    val Rel    # Release
+    val Acqrel # Acquire Release
+    val Seqcst # Sequentially Consistent
+  end
+
+  decl fence(
+    ordering: Ordering,
+    syncscope: SS = ""
+  ) forall SS : @~string
+end

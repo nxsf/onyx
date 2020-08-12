@@ -1,0 +1,5 @@
+# > The quotient of two directed lines in a three-dimensional space.
+# > -- <cite>William Rowan Hamilton</cite>
+decl primitive Core::Quaternion<Type: T ~ Real>
+  derive Hypercomplex<T>;
+end

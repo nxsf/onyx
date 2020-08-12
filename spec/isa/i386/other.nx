@@ -1,0 +1,38 @@
+{% if nx.target.ise:includes("sse3") %}
+  reopen (FBin64)x2
+    # ADDSUBPD.
+    # Returns `<this[0] − another[0], this[1] + another[1]>`.
+    decl .add_subtract(self) : self
+    alias +-, addsub to add_subtract
+
+    # HADDPD.
+    # Returns `<this[0] + this[1], another[0] + another[1]>`.
+    decl .horizontal_add(self) : self
+    alias hadd to horizontal_add
+
+    # HSUBPD.
+    # Returns `<this[0] − this[1], another[0] − another[1]>`.
+    decl .horizontal_subtract(self) : self
+    alias hsub to horizontal_subtract
+  end
+
+  reopen (FBin32)x4
+    # ADDSUBPS.
+    # Returns `<this[0] − another[0], this[1] + another[1],
+    # this[2] − another[2], this[3] + another[3]>`.
+    decl .add_subtract(self) : self
+    alias addsub to add_subtract
+
+    # HADDPS.
+    # Returns `<this[0] + this[1], this[2] + this[3],
+    # another[0] + another[1], another[2] + this[3]>`.
+    decl .horizontal_add(self) : self
+    alias hadd to horizontal_add
+
+    # HSUBPS.
+    # Returns `<this[0] − this[1], this[2] − this[3],
+    # another[0] − another[1], another[2] − this[3]>`.
+    decl .horizontal_subtract(self) : self
+    alias hsub to horizontal_subtract
+  end
+{% end %}

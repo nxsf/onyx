@@ -1,0 +1,73 @@
+require "./spec.nx"
+
+@describe "Variant" => do
+  @describe " type" => do
+    @it " has determenistic option ordering" => do
+      assert(Variant<SInt32, String<1>, FBin64> ::
+        Variant<String<1>, FBin64, SInt32>)
+    end
+
+    @it " fuzzy-matches with scalar types" => do
+      # Can not match to a fuzzy variant, e.g.
+      #
+      # ```
+      # assert(@rand(42, "foo") ~? Variant<Int, String>)
+      # ```
+
+      assert(@rand(42, "foo") ~? Int ^ String)
+      assert(not @rand(42, "foo") ~? Int) # Because it can be String
+      assert(@rand(42, 42u16) ~? Int)
+      assert(not @rand(42, 42u16) ~? SInt)
+    end
+  end
+
+  # Check if the actual variant value is of exact *type*.
+  @describe ":is?" => do
+    @it => do
+      final v = @always(42, "foo")
+      if (nothrow v.is?(SInt32)) then (v : SInt32) += 1
+      assert(v == 43)
+    end
+  end
+
+  # Check if the actual variant value is of *type*,
+  # i.e. perform a fuzzy match.
+  @describe ":of?" => do
+    @it => do
+      final v = @always(42, "foo")
+      if (nothrow v.of?(Int)) then (v : SInt32) += 1
+      assert(v == 43)
+    end
+  end
+
+  # Try interpreting the actual variant value as *type* exactly.
+  # If the value is not the given *type*, returns `Void`.
+  @describe ":as?" => do
+    @it => do
+      final v = @always(42, "foo")
+      final i = nothrow v.as?(SInt32)
+      if i then (i : SInt32) += 1
+      assert(v == 43)
+    end
+  end
+
+  # Try interpreting the actual variant value as *type* exactly,
+  # throwing `AssertionError` in case of mismatch.
+  @describe ":as!" => do
+    @it => do
+      final v = @always(42, "foo")
+      v.as!(SInt32) += 1
+      assert(v == 43)
+    catch AssertionError
+      fail # Must not throw
+    end
+
+    @it => do
+      final v = @never(42, "foo")
+      v.as!(SInt32) += 1
+      fail # Must throw
+    catch AssertionError
+      # Success
+    end
+  end
+end

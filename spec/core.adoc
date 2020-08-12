@@ -1,0 +1,105 @@
+== Core API
+
+The Onyx Core API is the `Core::` namespace including types, functions and macros built into the language.
+
+The `Core::` namespace is available from *every* Onyx source code file.
+
+Criteria for being included in the Core API are:
+
+* Have a great chance of being implemented on hardware level.
+For example, integers are ubiquitous, floating points are common, and tensors are typical for GPUs.
+For the same reason most basic math operations are in the Core API;
+
+* Have literals built into the language.
+For example, ranges;
+
+* Have traits otherwise impossible to express using the language.
+For example, blocks, lambdas, functions, unions, variants, void etc.
+
+Core API types' memory layout is usually undefined.
+
+.Core API scalar types diagram
+[blockdiag, ./img/core-scalar-types, svg]
+....
+blockdiag {
+  // edge_layout = flowchart
+
+  Scalar [shape = roundedbox];
+  Numeric [shape = roundedbox];
+  Real [shape = roundedbox];
+
+  Scalar -> Numeric -> Real;
+  Scalar -> Tensor;
+  Scalar -> Range;
+  Scalar -> Atomic;
+
+  Numeric -> Imaginary;
+  Numeric -> Hypercomplex;
+
+  Hypercomplex [shape = roundedbox];
+
+  Real -> Rational -> Int;
+  Real -> Enum;
+  Real -> Float;
+  Real -> Fixed;
+  Real -> Posit;
+
+  Hypercomplex -> Complex;
+  Hypercomplex -> Quaternion;
+}
+....
+
+.Core API aliases diagram
+[blockdiag, ./img/core-aliases, svg]
+....
+blockdiag {
+  SInt [shape = ellipse];
+  UInt [shape = ellipse];
+  Bit [shape = ellipse];
+  Bool [shape = ellipse];
+  Byte [shape = ellipse];
+
+  Int -- SInt [style = dashed];
+  Int -- UInt [style = dashed];
+  UInt -- Bit [style = dashed];
+  UInt -- Bool [style = dashed];
+  UInt -- Byte [style = dashed];
+
+  FBin [shape = ellipse];
+  FDec [shape = ellipse];
+
+  Float -- FBin [style = dashed];
+  Float -- FDec [style = dashed];
+
+  XBin [shape = ellipse];
+  XDec [shape = ellipse];
+
+  Fixed -- XBin [style = dashed];
+  Fixed -- XDec [style = dashed];
+
+  Matrix [shape = ellipse];
+  Vector [shape = ellipse];
+
+  Tensor -- Matrix [style = dashed];
+  Tensor -- Vector [style = dashed];
+}
+....
+
+.Core API aggregate types diagram
+[blockdiag, ./img/core-aggregate-types, svg]
+....
+blockdiag {
+  orientation = portrait
+
+  Aggregate [shape = roundedbox];
+
+  Aggregate -> Array;
+  Aggregate -> Stack;
+  Aggregate -> Struct;
+  Aggregate -> Class;
+
+  Class [shape = roundedbox];
+}
+....
+
+Other than types deriving from `Scalar` and `Aggregate`, the Core API also includes freestanding `Void`, `Union`, `Vector` and `Quire` types.

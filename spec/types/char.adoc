@@ -1,0 +1,4 @@
+= Char
+
+A char is a single codepoint in some encoding.
+It may not map to abstract characters comprised of multiple codepoints.

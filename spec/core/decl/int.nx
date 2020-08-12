@@ -1,0 +1,104 @@
+require "./integer.nx"
+
+# You can go from `Natural` to `Integer`, but not vice versa
+%!Rational, %!ℚ # -0.5, 1/3, ∞, ∅
+%!Integer,  %!ℤ # -1, 0, 1
+%!Natural,  %!ℕ # 0, 1
+%!Boolean,  %!𝔹 # true, false
+
+%!Range<T>  # 0..0.5
+
+%!Tensor<T> # |[0, 0.5]|
+%!Vector<T> # <0, 0.5> # Vector can be treated as `Tensor`
+
+%!Character # 'f'
+%!String    # "f"
+%!Symbol    # :f
+
+# A binary 2's complement integer.
+decl primitive Int<Signed ~ %Bool, Bitsize ~ %Size>
+  derive Integer;
+  decl initialize(value : self)
+end
+
+alias SInt<*> = Int<true, *>
+alias UInt<*> = Int<false, *>
+
+alias SInt8 = SInt<8>
+alias SInt16 = SInt<16>
+alias SInt32 = SInt<32>
+alias SInt64 = SInt<64>
+alias SInt128 = SInt<128>
+
+alias UInt8 = UInt<8>
+alias UInt16 = UInt<16>
+alias UInt32 = UInt<32>
+alias UInt64 = UInt<64>
+alias UInt128 = UInt<128>
+
+alias Bit, Bool = UInt<1>
+alias Byte = UInt8
+
+# # The following aliases are implementation-defined.
+# # They must be interchangeable with according C types.
+# #
+
+# # Every valid character is valid integer, but not vice versa.
+# # Therefore, character types are distinct aliases.
+# #
+
+# decl distinct alias UChar # Usually `UInt8`
+# decl distinct alias SChar # Usually `SInt8`
+# decl distinct alias Char  # `$char` (`SChar` or `UChar`)
+# decl distinct alias WChar # `$wchar_t` (C17§7.19.2)
+
+# virtual alias SShort    # Usually `SInt16`
+# virtual alias SInt      # Usually `SInt16` or `SInt32`
+# virtual alias SLong     # Usually `SInt32`
+# virtual alias SLongLong # Usually `SInt32` or `SInt64`
+
+# virtual alias UShort    # Usually `UInt16`
+# virtual alias UInt      # Usually `UInt16` or `UInt32`
+# virtual alias ULong     # Usually `UInt32` or `UInt64`
+# virtual alias ULongLong # Usually `UInt64`
+
+# virtual alias Size, USize # `$size_t` (C17§7.19.2)
+# virtual alias SSize       # Signed version of `Size`
+
+# # The `Fast` family aliases to the implementation-defined
+# # fastest types with at least provided bitsize (C17§7.20.1.3).
+# # They must be interchangeable with according C types,
+# # for example `UFast16` and `$uint_fast16_t`.
+
+# virtual alias SFast8
+# virtual alias SFast16
+# virtual alias SFast32
+# virtual alias SFast64
+
+# virtual alias UFast8
+# virtual alias UFast16
+# virtual alias UFast32
+# virtual alias UFast64
+
+# # The `Least` family aliases to the implementation-defined
+# # smallest types with at least provided bitsize (C17§7.20.1.2).
+# # They must be interchangeable with according C types,
+# # for example `ULeast16` and `$uint_least16_t`.
+
+# virtual alias SLeast8
+# virtual alias SLeast16
+# virtual alias SLeast32
+# virtual alias SLeast64
+
+# virtual alias ULeast8
+# virtual alias ULeast16
+# virtual alias ULeast32
+# virtual alias ULeast64
+
+# # Fixed-width character types
+# # must be interchangeable with
+# # according C types (C17§7.28).
+# #
+
+# decl distinct alias Char16 to ULeast16; # `$char16_t`
+# decl distinct alias Char32 to ULeast32; # `$char32_t`

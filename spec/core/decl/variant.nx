@@ -1,0 +1,132 @@
+# A variant is considered a scalar object rather than a container,
+# thus it does not have mutability. "Mutating" methods such as `set`
+# are only callable on non-final variant instances. Check methods
+# such as `is?` are subject to standard local behavioural erasure technics.
+decl primitive Variant<Types: *T>
+  # ```
+  # # Would panic if `var` is not local,
+  # # otherwise behavioural erasure is applied.
+  # (var : Variant<SInt32, FBin64> = SInt32(2)) += 3
+  # ```
+  decl .set(U) : this forall U in T
+  alias .= to .set
+
+  # Check if the actual variant value is of exact *type*.
+  #
+  # ```
+  # final v = @rand(42, "foo")
+  # if v.is?(SInt32) then (v : SInt32) += 1
+  # assert(v == 43 || v == "foo")
+  # ```
+  virtual def nothrow is?(type :: U) : Bool forall U
+
+  # Check if the actual variant value is of *type*,
+  # i.e. perform a fuzzy match.
+  #
+  # ```
+  # final v = @rand(42, "foo")
+  # if v.of?(Int) then (v : SInt32) += 1
+  # assert(v == 43 || v == "foo")
+  # ```
+  virtual def nothrow of?(type :: U) : Bool forall U
+
+  # Try interpreting the actual variant value as *type* exactly.
+  # If the value is not the given *type*, returns `Void`.
+  #
+  # ```
+  # final v = @rand(42, "foo")
+  # final i = v.as?(SInt32)
+  # if i then (i : SInt32) += 1
+  # assert(v == 43 || v == "foo")
+  # ```
+  virtual def nothrow as?(type :: U) : U? forall U
+
+  # Try interpreting the actual variant value as *type* exactly,
+  # throwing `AssertionError` in case of mismatch.
+  #
+  # ```
+  # final v = @rand > 0 ? 42 : "foo"
+  # v.as!(SInt32) += 1
+  # assert(v == 42)
+  # ```
+  virtual def as!(type :: U) : U throws AssertionError forall U
+
+  # Unsafely intepret actual variant value as *type*.
+  #
+  # PERFORMANCE: It is faster due to not checking the switch value.
+  #
+  # ```
+  # final v = @rand > 0 ? 42 : "foo"
+  # unsafe! v.as!!(SInt32) += 1
+  # assert(v == 42)
+  # ```
+  virtual unsafe def nothrow as!!(type :: U) : U
+
+  # Check if the actual variant value is `Void`.
+  #
+  # ```
+  # final v = @rand(42, Void) : Variant<SInt32, Void> : SInt32?
+  # if not v.void? then (v : SInt32) += 1
+  # assert(v == 43 || v.void?)
+  # ```
+  virtual def nothrow void? : Bool
+
+  # Ensure that the actual variant value
+  # is not `Void`, throwing otherwise.
+  #
+  # ```
+  # final v = @rand > 0 ? 42 : Void
+  # v.novoid! += 1
+  # assert(v == 43)
+  # ```
+  virtual def novoid! : Undef throws AssertionError
+
+  # Check if the actual variant value equals to *value*.
+  # It delegates `==` call to underlying types, which may throw.
+  #
+  # ```
+  # final v = @rand(42, "foo")
+  # assert(v == 42 or v == "foo")
+  # if v == 42 then assert(v :? SInt32)
+  # ```
+  virtual def maythrow equals?(value : U) : Bool forall U
+  alias eq?, == to equals?
+
+  # Set the actual variant value to a new *value*.
+  # The old value is finalized.
+  # Copy-returns the **new** value if the call has a receiver.
+  # Acts similarly to (simple) assignment (`=` or `<-`).
+  # Setting is not applicable to final variant instances.
+  #
+  # ```
+  # let v := @rand(42, "foo")
+  # assert((v = 43) == v.set(43))
+  # ```
+  virtual def set(value : U) : (\recv? ? U : Void)
+
+  # Replace the actual variant value with a new *value*.
+  # Move-returns the **old** value if the call has a receiver.
+  # Otherwise, finalizes the old value.
+  # Acts similarly to replace-assignment (`<<=` or `<<-`).
+  # Replacing is not applicable to final variant instances.
+  #
+  # ```
+  # let v := @rand(42, "foo")
+  # final old := v <<= 43 # Or `v.replace(43)`, `v.replace(<- 43)`
+  # assert(old == 42 || old == "foo")
+  # ```
+  virtual def replace(value : U) : (\recv? ? (<-U) : Void)
+
+  # Swap the actual variant value with target's,
+  # updating the switches accordingly.
+  # Acts similarly to swap-assignment (`<=>`).
+  # Swapping is not applicable to final variant instances.
+  #
+  # ```
+  # let v1 := @rand(42, "foo")
+  # let v2 := @rand(43, "bar")
+  # final new := v1 <=> v2 # Or `v1.swap(v2)`, `v1.swap(<- v2)`
+  # assert(new == 43 || new == "bar")
+  # ```
+  virtual def swap(target : self*crw) : (\recv? ? U : Void)
+end
