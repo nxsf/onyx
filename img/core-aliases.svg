@@ -1,0 +1,109 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg viewBox="0 0 640 840" xmlns="http://www.w3.org/2000/svg" xmlns:inkspace="http://www.inkscape.org/namespaces/inkscape" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs id="defs_block">
+    <filter height="1.504" id="filter_blur" inkspace:collect="always" width="1.1575" x="-0.07875" y="-0.252">
+      <feGaussianBlur id="feGaussianBlur3780" inkspace:collect="always" stdDeviation="4.2" />
+    </filter>
+  </defs>
+  <title>blockdiag</title>
+  <desc>blockdiag {
+  SInt [shape = ellipse];
+  UInt [shape = ellipse];
+  Bit [shape = ellipse];
+  Bool [shape = ellipse];
+  Byte [shape = ellipse];
+
+  Int -- SInt [style = dashed];
+  Int -- UInt [style = dashed];
+  UInt -- Bit [style = dashed];
+  UInt -- Bool [style = dashed];
+  UInt -- Byte [style = dashed];
+
+  FBin [shape = ellipse];
+  FDec [shape = ellipse];
+
+  Float -- FBin [style = dashed];
+  Float -- FDec [style = dashed];
+
+  XBin [shape = ellipse];
+  XDec [shape = ellipse];
+
+  Fixed -- XBin [style = dashed];
+  Fixed -- XDec [style = dashed];
+
+  Matrix [shape = ellipse];
+  Vector [shape = ellipse];
+
+  Tensor -- Matrix [style = dashed];
+  Tensor -- Vector [style = dashed];
+}</desc>
+  <ellipse cx="323" cy="66" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <ellipse cx="323" cy="146" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <ellipse cx="515" cy="146" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <ellipse cx="515" cy="226" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <ellipse cx="515" cy="306" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="67" y="46" />
+  <ellipse cx="323" cy="386" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <ellipse cx="323" cy="466" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="67" y="366" />
+  <ellipse cx="323" cy="546" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <ellipse cx="323" cy="626" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="67" y="526" />
+  <ellipse cx="323" cy="706" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <ellipse cx="323" cy="786" fill="rgb(0,0,0)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" />
+  <rect fill="rgb(0,0,0)" height="40" stroke="rgb(0,0,0)" style="filter:url(#filter_blur);opacity:0.7;fill-opacity:1" width="128" x="67" y="686" />
+  <ellipse cx="320" cy="60" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="24" x="320.0" y="66">SInt</text>
+  <ellipse cx="320" cy="140" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="24" x="320.0" y="146">UInt</text>
+  <ellipse cx="512" cy="140" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="18" x="512.0" y="146">Bit</text>
+  <ellipse cx="512" cy="220" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="24" x="512.0" y="226">Bool</text>
+  <ellipse cx="512" cy="300" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="24" x="512.0" y="306">Byte</text>
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="64" y="40" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="18" x="128.0" y="66">Int</text>
+  <ellipse cx="320" cy="380" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="24" x="320.0" y="386">FBin</text>
+  <ellipse cx="320" cy="460" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="24" x="320.0" y="466">FDec</text>
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="64" y="360" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="30" x="128.0" y="386">Float</text>
+  <ellipse cx="320" cy="540" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="24" x="320.0" y="546">XBin</text>
+  <ellipse cx="320" cy="620" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="24" x="320.0" y="626">XDec</text>
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="64" y="520" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="30" x="128.0" y="546">Fixed</text>
+  <ellipse cx="320" cy="700" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="36" x="320.0" y="706">Matrix</text>
+  <ellipse cx="320" cy="780" fill="rgb(255,255,255)" rx="64.0" ry="20.0" stroke="rgb(0,0,0)" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="36" x="320.0" y="786">Vector</text>
+  <rect fill="rgb(255,255,255)" height="40" stroke="rgb(0,0,0)" width="128" x="64" y="680" />
+  <text fill="rgb(0,0,0)" font-family="sans-serif" font-size="11" font-style="normal" font-weight="normal" text-anchor="middle" textLength="36" x="128.0" y="706">Tensor</text>
+  <path d="M 384 140 L 448 140" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 384 140 L 416 140" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 416 140 L 416 220" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 416 220 L 448 220" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 384 140 L 416 140" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 416 140 L 416 300" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 416 300 L 448 300" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 192 60 L 256 60" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 192 60 L 224 60" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 224 60 L 224 140" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 224 140 L 256 140" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 192 380 L 256 380" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 192 380 L 224 380" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 224 380 L 224 460" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 224 460 L 256 460" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 192 540 L 256 540" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 192 540 L 224 540" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 224 540 L 224 620" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 224 620 L 256 620" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 192 700 L 256 700" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 192 700 L 224 700" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 224 700 L 224 780" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+  <path d="M 224 780 L 256 780" fill="none" stroke="rgb(0,0,0)" stroke-dasharray="4" />
+</svg>
