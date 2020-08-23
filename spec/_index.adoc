@@ -7,14 +7,13 @@
 :toclevels: 3
 :icons: font
 //:source-highlighter: pygments
+:copycss: ./stylesheets/style.css
 :linkcss:
-:stylesdir: stylesheets/
-:stylesheet: style.css
 :xrefstyle: full
 :listing-caption: Listing
 :stem:
-Vladislav Dvachevskii <vlad@dvachevskii.com>; NXSF Onyx Standard Committee <onyx@nsxf.org>
-v0.1.0, June 20, 2020
+Vlad Faust <mail@vladfaust.com>
+v0.0.0, August 23, 2020
 
 include::foreword.adoc[]
 

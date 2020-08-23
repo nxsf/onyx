@@ -1,8 +1,6 @@
 [preface]
 = Introduction
 
-The initial revision of this standard, _The Onyx programming language standard -- Version 0.1.0_, is a property of https://dvachevskii.com[Vladislav Dvachevskii], licensed under https://creativecommons.org/licenses/by-nc/4.0[CC BY-NC 4.0].
-
 The Onyx programming language is a statically-typed general purpose programming language with the following design goals:
 
 * Performance in mind.

@@ -45,25 +45,25 @@ alias UTF32BE to UTF32<true>
 alias UTF32LE to UTF32<false>
 
 # Multiple codeunits make up a single codepoint, i.e. `Char`.
-distinct alias Codeunit<Encoding: E> to UInt<E.<Unitsize>>
+distinct alias Codeunit<Encoding: E> to UInt<E::<Unitsize>>
 end
 
 # A codepoint in given `Charset`.
-distinct alias Char<Charset: CS> to UInt<CS.<Size>>
+distinct alias Char<Charset: CS> to UInt<CS::<Size>>
 end
 
 distinct alias String<Encoding: E, *>
 to Array<Type: Codeunit<E>, *>
-  derive Container::Enumerable<Char<E.<Charset>>>
+  derive Container::Enumerable<Char<E::<Charset>>>
     impl ~each(block) as each_char;
   end
 
-  derive Container::Indexable<Char<E.<Charset>>, Size>
+  derive Container::Indexable<Char<E::<Charset>>, Size>
     impl ~[](index) as get_char;
     impl ~[]=(index, value) as set_char;
 
     impl ~(
-      self && Enumerable<Char<E.<Charset>>>
+      self && Enumerable<Char<E::<Charset>>>
     ).each(block) as each_char;
   end
 

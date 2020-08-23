@@ -1,0 +1,14 @@
+trait Numeric;
+trait Real <~ Numeric;
+trait Rational <~ Real;
+
+primitive Fraction<Type ~ Integer> <~ Rational
+end
+
+primitive Integer <~ Rational
+  struct Overflow;
+end
+
+primitive FloatingPoint
+  struct Underflow;
+end
