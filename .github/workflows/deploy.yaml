@@ -26,7 +26,7 @@ jobs:
           node-version: 12
 
       - name: Install Node dependencies
-        run: node install bytefield-svg
+        run: npm install bytefield-svg
 
       - name: Set up Python
         uses: actions/setup-python@v2
