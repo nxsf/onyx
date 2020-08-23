@@ -1,0 +1,50 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v2
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.6
+
+      - name: Install Ruby dependencies
+        run: bundle install
+
+      - name: Set up Node
+        uses: actions/setup-node@v2-beta
+        with:
+          node-version: 12
+
+      - name: Install Node dependencies
+        run: node install bytefield-svg
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+
+      - name: Install Python dependencies
+        run: pip install blockdiag
+
+      - name: Build HTML5
+        run: bundle exec ruby build-html5.rb
+
+      - name: Build PDF
+        run: bundle exec ruby build-pdf.rb
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@3.5.9
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: gh-pages
+          FOLDER: build
