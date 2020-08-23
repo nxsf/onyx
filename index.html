@@ -2185,45 +2185,20 @@ export void main() {
 <p>Digits in a decimal fixed-point number are encoded using the <a href="https://en.wikipedia.org/wiki/Densely_packed_decimal">Densely Packed Decimal encoding</a>.
 An additional bit is occupied by the sign.</p>
 </div>
-<div class="listingblock">
-<div class="title">Listing 7. Decimal fixed-point number encoding scheme</div>
+<div class="imageblock">
 <div class="content">
-<pre>Failed to generate image: Could not find the 'bytefield-svg' executable in PATH; add it to the PATH or specify its location using the 'bytefield-svg' document attribute
-(def boxes-per-row 8)
-(def row-labels ["0", "1", "2", "3", "4", "5", "6", "7", "8"])
-(draw-column-headers)
-(draw-box "Sign" [:box-first])
-(draw-gap "DPD" [:box-related])
-(draw-bottom)</pre>
+<img src="./img/fixed-point-decimal-encoding.svg" alt="fixed point decimal encoding" width="361" height="146">
 </div>
+<div class="title">Figure 1. Decimal fixed-point number encoding scheme</div>
 </div>
 <div class="exampleblock">
 <div class="content">
 <div class="paragraph">
 <p>Given <code>17.42Q4f2 : XDec&lt;2, 2&gt;</code>, <code>0</code> is for sign, and <code>1742</code> is <code>1001 1000 0011 00</code> in DPD encoding.</p>
 </div>
-<div class="listingblock">
+<div class="imageblock">
 <div class="content">
-<pre>Failed to generate image: no implicit conversion of nil into String
-(def boxes-per-row 15)
-(def left-margin 0)
-(draw-column-headers {:labels (map str (range 15))})
-(draw-box (text "0" :hex))
-(draw-box (text "1" :hex) [:box-first])
-(draw-box (text "0" :hex) [:box-related])
-(draw-box (text "1" :hex) [:box-related])
-(draw-box (text "0" :hex) [:box-related])
-(draw-box (text "0" :hex) [:box-related])
-(draw-box (text "1" :hex) [:box-related])
-(draw-box (text "0" :hex) [:box-related])
-(draw-box (text "1" :hex) [:box-related])
-(draw-box (text "1" :hex) [:box-related])
-(draw-box (text "0" :hex) [:box-related])
-(draw-box (text "1" :hex) [:box-related])
-(draw-box (text "1" :hex) [:box-related])
-(draw-box (text "1" :hex) [:box-related])
-(draw-box (text "0" :hex) [:box-last])
-(draw-bottom)</pre>
+<img src="./img/fixed-point-decimal-encoding-example.svg" alt="fixed point decimal encoding example" width="601" height="46">
 </div>
 </div>
 </div>
@@ -2328,7 +2303,7 @@ An additional bit is occupied by the sign.</p>
 <p>A unit type is an object, but it only exists in a single instance and does not occupy any memory in runtime.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 8. Unit type declaration syntax</div>
+<div class="title">Listing 7. Unit type declaration syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">(* A unit type declaration. *)
 unit =
@@ -2702,7 +2677,7 @@ Namespaces do not have behaviour.</p>
 <div class="sect2">
 <h3 id="_declaring_a_trait"><a class="link" href="#_declaring_a_trait">14.1. Declaring a trait</a></h3>
 <div class="listingblock">
-<div class="title">Listing 9. Trait declaration syntax</div>
+<div class="title">Listing 8. Trait declaration syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">trait_decl =
   trait_decl_mod,
@@ -2761,7 +2736,7 @@ A trait method implementation may use <code>this</code> and <code>super</code> k
 <p>A type which has a <code>derive T</code> clause is said to <em>derive from</em> <code><em>T</em></code>.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 10. The <code>derive</code> clause syntax</div>
+<div class="title">Listing 9. The <code>derive</code> clause syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">derive =
   ["undefstor" | "static" | "instance"],
@@ -2828,7 +2803,7 @@ The storage of an included member depends on the storage modifier of the accordi
 <div class="title">Example 17. Multiple ways to statically derive</div>
 <div class="content">
 <div class="listingblock">
-<div class="title">Listing 11. Static derive in T</div>
+<div class="title">Listing 10. Static derive in T</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">reopen SInt32
   static derive Debuggable
@@ -2838,7 +2813,7 @@ end</code></pre>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 12. Instance derive in Type&lt;T&gt;</div>
+<div class="title">Listing 11. Instance derive in Type&lt;T&gt;</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">reopen Type&lt;SInt32&gt;
   derive Debuggable
@@ -3109,19 +3084,19 @@ For example, blocks, lambdas, functions, unions, variants, void etc.</p>
 <div class="content">
 <img src="./img/core-scalar-types.svg" alt="core scalar types" width="1024" height="680">
 </div>
-<div class="title">Figure 1. Core API scalar types diagram</div>
+<div class="title">Figure 2. Core API scalar types diagram</div>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="./img/core-aliases.svg" alt="core aliases" width="640" height="840">
 </div>
-<div class="title">Figure 2. Core API aliases diagram</div>
+<div class="title">Figure 3. Core API aliases diagram</div>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="./img/core-aggregate-types.svg" alt="core aggregate types" width="832" height="200">
 </div>
-<div class="title">Figure 3. Core API aggregate types diagram</div>
+<div class="title">Figure 4. Core API aggregate types diagram</div>
 </div>
 <div class="paragraph">
 <p>Other than types deriving from <code>Scalar</code> and <code>Aggregate</code>, the Core API also includes freestanding <code>Void</code>, <code>Union</code>, <code>Vector</code> and <code>Quire</code> types.</p>
@@ -3297,7 +3272,7 @@ An explicit <code>namespace</code>, <code>reference</code> or <code>alias</code>
 <div class="exampleblock">
 <div class="content">
 <div class="listingblock">
-<div class="title">Listing 13. Using a namespace</div>
+<div class="title">Listing 12. Using a namespace</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">namespace Foo
   let bar = 42
@@ -3308,7 +3283,7 @@ bar = 43  # OK</code></pre>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 14. Explicit <code>using</code> kind</div>
+<div class="title">Listing 13. Explicit <code>using</code> kind</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">namespace Foo
 end
@@ -3318,7 +3293,7 @@ using namespace Foo # OK
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 15. Using an alias</div>
+<div class="title">Listing 14. Using an alias</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">namespace Foo
   let bar = 42
@@ -3447,7 +3422,7 @@ A valid example would be <code>@{42i32}</code>.</p>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 16. TODO:</div>
+<div class="title">Listing 15. TODO:</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">def foo(x: L) forall L : %i
   \{{ nx.scope.L.value }} # `foo(42i) -&gt; 42i`
@@ -3983,7 +3958,7 @@ Exceptions are the Q number that is widely known by its upper-case name, hexadec
 </table>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. Numeric literals syntax</div>
+<div class="title">Listing 16. Numeric literals syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">multiplier_prefix_iec =
   "Yi" | "Zi" | "Ei" | "Pi" |
@@ -4467,7 +4442,7 @@ For example, <code>10M300k == 10300000</code> is valid, but <code>300k10M</code>
 <div class="sect4">
 <h5 id="xbin-literals"><a class="link" href="#xbin-literals">Binary fixed-point literals</a></h5>
 <div class="listingblock">
-<div class="title">Listing 18. Q number literal suffix syntax</div>
+<div class="title">Listing 17. Q number literal suffix syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">(* For consistency, it is still
   referenced as "`XBin` suffix". *)
@@ -4538,7 +4513,7 @@ If fractional part size is omitted, it equals to the bitsize minus one bit if si
 <div class="sect4">
 <h5 id="xdec-literals"><a class="link" href="#xdec-literals">Decimal fixed-point literals</a></h5>
 <div class="listingblock">
-<div class="title">Listing 19. Decimal fixed-point literal syntax</div>
+<div class="title">Listing 18. Decimal fixed-point literal syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">xdec_suffix =
   (* An optional signedness. *)
@@ -4781,7 +4756,7 @@ For example, in <code>"\97f" == "af"</code>, the numerical codepoint in decimal 
 <p>Numerical codepoint values allow non-trailing underscores.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. Numerical codepoint syntax</div>
+<div class="title">Listing 19. Numerical codepoint syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">numerical_codepoint =
   ("\o", {octal, "_"}-, "_"-) |
@@ -4840,7 +4815,7 @@ end
 For example, <code>'a&#8217;u8 == 97u8</code>, <code>'豈&#8217;i16 == (0xF900)i16 == -1792i16</code>.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. Character literal syntax</div>
+<div class="title">Listing 20. Character literal syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">character_literal = "'", unicode | {numerical_codepoint}, "'";</code></pre>
 </div>
@@ -4906,7 +4881,7 @@ If the type defined by the literal can not contain a codeunit value in the liter
 For example, <code>"aф"u8 == [0x61u8, 0xd1u8, 0x84u8] : UInt8[3]</code>.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 22. String literal syntax</div>
+<div class="title">Listing 21. String literal syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">string_literal = "\"", {unicode | numerical_codepoint}, "\""
 string_literal = "/", {unicode}, "/";</code></pre>
@@ -4992,7 +4967,7 @@ SQL == "\nSELECT\nFROM bar  WHERE SQL\n"</code></pre>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 23. Heredoc syntax</div>
+<div class="title">Listing 22. Heredoc syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">(* NOTE: Opening and closing sequences must be equal! *)
 heredoc =
@@ -5281,7 +5256,7 @@ In a magic text literal, every character is meaningful, including spaces.</p>
 <p>Outside of a magic text literal, a sequence of non-digit characters is considered a symbol literal (assuming that <code>:</code> is omitted).</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 24. Magic literal syntax</div>
+<div class="title">Listing 23. Magic literal syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">magic_literal_values =
   [
@@ -5398,7 +5373,7 @@ For example, Onyx struct is different from C <span class="small"><em>struct</em>
 <p>A C file may be imported using an <code>import</code> statement.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 25. The import statement syntax</div>
+<div class="title">Listing 24. The import statement syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">(*
   The `import` statement shares syntax and semantics
@@ -5597,7 +5572,7 @@ Akin to Onyx identifiers, wrapping backticks may be used to reference multi-word
 <div class="title">Example 32. Importing a variable</div>
 <div class="content">
 <div class="listingblock">
-<div class="title">Listing 26. variables.h</div>
+<div class="title">Listing 25. variables.h</div>
 <div class="content">
 <pre class="highlight"><code class="language-c" data-lang="c">int i;
 volatile const float j = 42;
@@ -5617,7 +5592,7 @@ const char* sd = "kax";</code></pre>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 27. main.nx</div>
+<div class="title">Listing 26. main.nx</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">import "./variables.h"
 
@@ -5673,7 +5648,7 @@ export void main () {
 <div class="title">Example 33. Importing a function</div>
 <div class="content">
 <div class="listingblock">
-<div class="title">Listing 28. functions.h</div>
+<div class="title">Listing 27. functions.h</div>
 <div class="content">
 <pre class="highlight"><code class="language-c" data-lang="c">// A function declaration.
 int foo();
@@ -5685,7 +5660,7 @@ int bar(int a, int b) {
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 29. main.nx</div>
+<div class="title">Listing 28. main.nx</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">import "./functions.h"
 
@@ -5715,13 +5690,13 @@ export void main () {
 <div class="title">Example 34. Importing a enum</div>
 <div class="content">
 <div class="listingblock">
-<div class="title">Listing 30. enum.h</div>
+<div class="title">Listing 29. enum.h</div>
 <div class="content">
 <pre class="highlight"><code class="language-c" data-lang="c">enum color_t { RED, GREEN = 2, BLUE };</code></pre>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 31. main.nx</div>
+<div class="title">Listing 30. main.nx</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">import "./enum.h"
 
@@ -5749,7 +5724,7 @@ export void main () {
 <div class="title">Example 35. Importing a union</div>
 <div class="content">
 <div class="listingblock">
-<div class="title">Listing 32. union.h</div>
+<div class="title">Listing 31. union.h</div>
 <div class="content">
 <pre class="highlight"><code class="language-c" data-lang="c">union union_t {
   int a;
@@ -5758,7 +5733,7 @@ export void main () {
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 33. main.nx</div>
+<div class="title">Listing 32. main.nx</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">import "./union.h"
 
@@ -5794,7 +5769,7 @@ By default, an imported <em class="small">struct</em> type is implicitly <code>c
 <div class="title">Example 36. Importing a struct</div>
 <div class="content">
 <div class="listingblock">
-<div class="title">Listing 34. struct.h</div>
+<div class="title">Listing 33. struct.h</div>
 <div class="content">
 <pre class="highlight"><code class="language-c" data-lang="c">struct struct_t {
   int a;
@@ -5803,7 +5778,7 @@ By default, an imported <em class="small">struct</em> type is implicitly <code>c
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 35. main.nx</div>
+<div class="title">Listing 34. main.nx</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">import "./struct.h"
 
@@ -5826,13 +5801,13 @@ export void main () {
 <div class="title">Example 37. Importing typedefs</div>
 <div class="content">
 <div class="listingblock">
-<div class="title">Listing 36. typedef.h</div>
+<div class="title">Listing 35. typedef.h</div>
 <div class="content">
 <pre class="highlight"><code class="language-c" data-lang="c">typedef struct { double hi, lo; } range;</code></pre>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 37. main.nx</div>
+<div class="title">Listing 36. main.nx</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">import "./typedef.h"
 
@@ -5870,14 +5845,14 @@ Instead, code generated by its evaluation is a subject to safety judgement.</p>
 <div class="title">Example 38. Importing macros</div>
 <div class="content">
 <div class="listingblock">
-<div class="title">Listing 38. macros.h</div>
+<div class="title">Listing 37. macros.h</div>
 <div class="content">
 <pre class="highlight"><code class="language-c" data-lang="c">#define FOO "foo"
 #define DOUBLE(arg) #arg * 2</code></pre>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 39. main.nx</div>
+<div class="title">Listing 38. main.nx</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx">import "./macros"
 
@@ -5927,7 +5902,7 @@ A <em class="small">preprocessor directive</em> is terminated with a newline unl
 <p>An exported block of code is enclosed in curly brackets and does not require a semicolon.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 40. The <code>export</code> statement syntax</div>
+<div class="title">Listing 39. The <code>export</code> statement syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">c = (? Raw C code ?)
 
@@ -6097,7 +6072,7 @@ Calling an exported Onyx function is always unsafe for consistency reasons.
 </tbody>
 </table>
 <div class="listingblock">
-<div class="title">Listing 41. The exported Onyx function syntax</div>
+<div class="title">Listing 40. The exported Onyx function syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">c_proto = (? A C function prototype, e.g. `void main(void)` ?);
 nxc_function_def = c_proto, "{", {expr}, "}";</code></pre>
@@ -6108,7 +6083,7 @@ nxc_function_def = c_proto, "{", {expr}, "}";</code></pre>
 <div class="title">Example 39. Exporting</div>
 <div class="content">
 <div class="listingblock">
-<div class="title">Listing 42. main.nx</div>
+<div class="title">Listing 41. main.nx</div>
 <div class="content">
 <pre class="highlight"><code class="language-nx" data-lang="nx"># This is an exported Onyx function.
 @[Entry] # An Onyx annotation!
@@ -6153,7 +6128,7 @@ export {
 <p>A possible variant of a generated C header:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 43. main.h</div>
+<div class="title">Listing 42. main.h</div>
 <div class="content">
 <pre class="highlight"><code class="language-c" data-lang="c">// This is an exported Onyx function.
 void main();
@@ -6192,7 +6167,7 @@ struct struct_t {
 <p>The following is the entire compiled Onyx language syntax.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 44. Onyx language syntax</div>
+<div class="title">Listing 43. Onyx language syntax</div>
 <div class="content">
 <pre class="highlight"><code class="language-ebnf" data-lang="ebnf">binary = "0" | "1";
 octal = binary | "2" | "3" | "4" | "5" | "6" | "7" | "8";
@@ -9122,7 +9097,7 @@ A grapheme is notated with angle brackets, e.g. ⟨a⟩, ⟨A⟩, ⟨å⟩, ⟨1
 <div id="footer">
 <div id="footer-text">
 Version 0.0.0<br>
-Last updated 2020-08-23 17:50:37 UTC
+Last updated 2020-08-23 17:53:14 UTC
 </div>
 </div>
 <script type="text/x-mathjax-config">
